@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="index.css">
+    <title>Link Aggregator</title>
+</head>
+<body>
+    <div class="header">
+        <h2>Link Aggregator</h2>
+        <a href="settings.html"><p>⚙️</p></a>
+        <button id="colorToggle">☀️</button>
+    </div>
+    <template id="linkTemplate">
+        <div class="post">
+            <a href="link" class="titleLink"><h2 class="Title">Title</h2></a>
+        </div>
+    </template>
+
+    <div id="linkContainer"></div>
+    <div id="loadingSpinner"></div>
+    <script src="index.js"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+@font-face {
+    font-family: 'OpenSans';
+    font-style: normal;
+    src: url('OpenSans-Regular.ttf');
+}
+
+
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+body {
+    background-color: black;
+}
+
+.post {
+    border-radius: 5px;
+    background-color: dimgrey;
+    text-align: center;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+    font-family: 'OpenSans', sans-serif;
+    color: black;
+}
+
+.post a {
+    text-decoration: none;
+    color: white;
+}
+
+#loadingSpinner {
+    display: none;
+    border: 8px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 8px solid #3498db;
+    width: 60px;
+    height: 60px;
+    animation: spin 2s linear infinite;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+body.light-mode {
+    background-color: white;
+}
+
+.post .light-mode {
+    background-color: lightgray;
+    color: white;
+}
+
+.post .light-mode a {
+    color: black;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #808080;
+    padding: 10px;
+    color: white;
+    border-radius: 10px;
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 16px;
+    flex-grow: 1;
+}
+
+.header a, .header button {
+    margin: 0;
+    font-size: 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+}
+
+.header a p {
+    display: inline;
+    margin: 0;
+}

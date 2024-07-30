@@ -13,9 +13,6 @@ app.add_middleware(
 )
 
 
-@app.get("/links/{page}")
-async def read_links(page: int):
-    scrape(page)
-    fix()
-    data = json.load(open("links.json", "r"))
-    return data
+@app.get("/links/")
+async def read_links(page):
+    return scrape(page)
