@@ -48,7 +48,7 @@ def main():
     coherence_model_lda = CoherenceModel(model=lda_model, texts=data, dictionary=id2word, coherence='c_v')
     coherence_lda = coherence_model_lda.get_coherence()
     vis = pyLDAvis.gensim_models.prepare(lda_model, corpus, id2word)
-    pyLDAvis.show(vis)
+    pyLDAvis.save_html(vis, "saved.html")
 
 
 if __name__ == "__main__":
