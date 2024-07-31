@@ -3,11 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <title>Settings</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="settings.css">
     <script src="settings.js" defer type="module"></script>
 </head>
 <body>
+    <div class="header">
+        <h2>Link Aggregator Settings</h2>
+        <button id="colorToggle">☀️</button>
+        <a href="index.html">🏠</a>
+    </div>
     <ul id="feedList">
 
     </ul>
+    <button id="listToggleBtn">Collapse Feeds</button>
+    <button id="addContentBtn" onclick="contentAdd()">➕</button>
+    <div class="widget-container">
+        <div class="expandable-widget" id="feedAddWidget">
+            <div class="widget-title">Add a:</div>
+            <div class="widget-choice" onClick="addFeed()">Feed</div>
+            <div class="widget-choice" onClick="addFolder()">Folder</div>
+            <div class="widget-choice">AI Topic</div>
+        </div>
+    </div>
 </body>
 </html>

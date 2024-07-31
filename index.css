@@ -4,8 +4,6 @@
     src: url('OpenSans-Regular.ttf');
 }
 
-
-
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -86,4 +84,29 @@ body.light-mode {
 .header a p {
     display: inline;
     margin: 0;
+}
+
+.hidden {
+    display: none;
+}
+
+.expandable-widget {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 200px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.expandable-widget.show {
+    display: block;
+}
+
+.widget-container {
+    position: relative;
+    display: inline-block;
 }

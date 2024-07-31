@@ -39,11 +39,14 @@ function onScroll() {
 }
 
 function toggleColor() {
+    const toggleElem = document.getElementById("colorToggle");
     document.body.classList.toggle('light-mode');
     if (document.body.classList.contains('light-mode')) {
         localStorage.setItem('lightMode', 'enabled');
+        toggleElem.innerText = "🌑";
     } else {
         localStorage.setItem('lightMode', 'disable');
+        toggleElem.innerText = "☀️";
     }
 }
 

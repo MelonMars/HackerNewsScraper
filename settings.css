@@ -1,0 +1,10 @@
+@font-face {
+    font-family: 'OpenSans';
+    font-style: normal;
+    src: url('OpenSans-Regular.ttf');
+}
+
+#feedList li{
+    font-family: 'OpenSans', sans-serif;
+    color: white;
+}
