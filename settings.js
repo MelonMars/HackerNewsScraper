@@ -1,5 +1,6 @@
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import { getFirestore, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDkoQkl9adRsW67H_jT7bWpH9QDRU44wS4",
@@ -13,11 +14,26 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-
 const auth = getAuth(app);
-onAuthStateChanged(auth, (user) => {
+const db = getFirestore(app)
+
+onAuthStateChanged(auth, async (user) => {
     if (user) {
-        console.log("Logged in");
+
+        try {
+            const dataSnapshot = await getDoc(doc(db, 'userData', user.uid));
+            const data = dataSnapshot.data();
+            const feeds = data.feeds;
+            console.log(feeds);
+            const feedList = document.getElementById("feedList");
+            feeds.forEach((feed) => {
+                    const li = document.createElement("li");
+                    li.textContent = feed;
+                    feedList.appendChild(li);
+            });
+        } catch (e) {
+            console.log(e);
+        }
     } else {
         window.location.href = "auth.html";
     }
