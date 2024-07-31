@@ -25,89 +25,126 @@ onAuthStateChanged(auth, async (user) => {
             const data = dataSnapshot.data();
             const feeds = data.feeds;
             console.log(feeds);
+
             const feedList = document.getElementById("feedList");
 
-            Object.keys(feeds).forEach((feed) => {
-                const items = feeds[feed];
-                items.forEach((item) => {
-                    const li = document.createElement("li");
-                    li.textContent = item.type === 'feed' ? `${feed}: ${item.feed}` : feed;
-                    li.classList.add(item.type);
-                    li.draggable = item.type === 'feed';
+            function createListItem(itemName, item) {
+                const li = document.createElement("li");
+                console.log(itemName);
+                console.log(item.type);
+                console.log(item.length);
+                li.textContent = itemName;
+                li.classList.add(item.type);
+                if (item.type === 'feed') {
+                    li.draggable = true;
+                }
 
-                    if (item.type === 'folder') {
-                        const subUl = document.createElement('ul');
-                        subUl.classList.add('hidden');
-                        li.appendChild(subUl);
-                        li.addEventListener('click', () => {
-                            subUl.classList.toggle('hidden');
-                        });
+                if (item.type === 'folder') {
+                    const subUl = document.createElement('ul');
+                    subUl.classList.add('hidden');
+                    li.appendChild(subUl);
 
-                        Object.keys(item.feeds).forEach(subFeed => {
-                            const subLi = document.createElement('li');
-                            subLi.textContent = subFeed;
-                            subLi.classList.add('feed');
-                            subLi.draggable = true;
+                    li.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        subUl.classList.toggle('hidden');
+                    });
+
+                    // Create list items for folder contents
+                    if (item.feeds) {
+                        item.feeds.forEach(subItem => {
+                            const subItemName = subItem.feed || subItem.folder;
+                            const subLi = createListItem(subItemName, subItem);
                             subUl.appendChild(subLi);
-                        });
-
-                        li.addEventListener('dragover', (event) => {
-                            event.preventDefault(); // Allow drop
-                            li.classList.add('drag-over');
-                        });
-
-                        li.addEventListener('dragleave', () => {
-                            li.classList.remove('drag-over');
-                        });
-
-                        li.addEventListener('drop', async (event) => {
-                            event.preventDefault();
-                            li.classList.remove('drag-over');
-
-                            const draggedItem = document.querySelector('.dragging');
-                            if (draggedItem) {
-                                const feedName = draggedItem.textContent.split(':')[0].trim();
-                                const targetFolder = feed;
-                                const feedUrl = draggedItem.textContent.split(':')[1]?.trim();
-
-                                const updatedFeeds = {...feeds};
-                                Object.keys(updatedFeeds).forEach(key => {
-                                    updatedFeeds[key] = updatedFeeds[key].filter(item => !(item.type === 'feed' && item.feeds === feedUrl));
-                                });
-
-                                if (!updatedFeeds[targetFolder]) {
-                                    updatedFeeds[targetFolder] = [];
-                                }
-                                updatedFeeds[targetFolder][feedName] = {
-                                    feeds: feedUrl,
-                                    type: 'feed'
-                                };
-
-                                await updateDoc(doc(db, 'userData', user.uid), {feeds: updatedFeeds});
-
-                                draggedItem.remove();
-
-                                const newSubLi = document.createElement('li');
-                                newSubLi.textContent = draggedItem.textContent.split(':')[1].trim();
-                                newSubLi.classList.add('feed');
-                                newSubLi.draggable = true;
-                                li.querySelector('ul').appendChild(newSubLi);
-                            }
-                        });
-
-                    } else if (item.type === 'feed') {
-                        li.addEventListener('dragstart', () => {
-                            li.classList.add('dragging');
-                        });
-
-                        li.addEventListener('dragend', () => {
-                            li.classList.remove('dragging');
                         });
                     }
 
-                    feedList.appendChild(li);
-                });
+                    li.addEventListener('dragover', (event) => {
+                        event.preventDefault(); // Allow drop
+                        li.classList.add('drag-over');
+                    });
+
+                    li.addEventListener('dragleave', () => {
+                        li.classList.remove('drag-over');
+                    });
+
+                    li.addEventListener('drop', async (event) => {
+                        event.preventDefault();
+                        li.classList.remove('drag-over');
+
+                        const draggedItem = document.querySelector('.dragging');
+                        if (draggedItem) {
+
+                            const feedName = draggedItem.textContent;
+                            const feedUrl = feeds[feedName][0].feed;
+                            const updatedFeeds = { ...feeds };
+
+                            Object.keys(updatedFeeds).forEach(key => {
+                                updatedFeeds[key] = updatedFeeds[key].filter(item => !(item.type === 'feed' && item.feed === feedUrl));
+                                if (updatedFeeds[key].length === 0) {
+                                    delete updatedFeeds[key];
+                                }
+                            });
+
+                            if (!updatedFeeds[itemName]) {
+                                updatedFeeds[itemName] = [];
+                            }
+
+                            const targetFolder = updatedFeeds[itemName].find(item => item.type === 'folder');
+                            if (targetFolder) {
+                                targetFolder.feed[feedName] = { feed: feedUrl, type: 'feed' };
+                            } else {
+                                updatedFeeds[itemName].push({
+                                    feed: { [feedName]: { feed: feedUrl, type: 'feed' } },
+                                    type: 'folder'
+                                });
+                            }
+
+                            try {
+                                await updateDoc(doc(db, 'userData', user.uid), { feeds: updatedFeeds });
+                            } catch (error) {
+                                console.error('Error updating document:', error);
+                            }
+
+
+
+
+                            draggedItem.remove();
+
+                            const newSubLi = createListItem(draggedItem.textContent, {
+                                feed: feedUrl,
+                                type: 'feed'
+                            });
+                            subUl.appendChild(newSubLi);
+                        }
+                    });
+
+                } else if (item.type === 'feed') {
+                    li.addEventListener('dragstart', () => {
+                        li.classList.add('dragging');
+                    });
+
+                    li.addEventListener('dragend', () => {
+                        li.classList.remove('dragging');
+                    });
+                }
+
+                return li;
+            }
+            feedList.innerHTML = '';
+
+            Object.keys(feeds).forEach(feedName => {
+                const items = feeds[feedName];
+                if (items.length === 0) {
+                    feedList.appendChild(createListItem(feedName, { type: 'folder', feeds: [] }));
+                } else {
+                    items.forEach(item => {
+                        const listItem = createListItem(feedName, item);
+                        feedList.appendChild(listItem);
+                    });
+                }
             });
+
+
         } catch (e) {
             console.log(e);
         }

@@ -8,3 +8,7 @@
     font-family: 'OpenSans', sans-serif;
     color: white;
 }
+
+.hidden {
+    display: none;
+}
