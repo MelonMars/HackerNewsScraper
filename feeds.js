@@ -171,18 +171,26 @@ function contentAdd() {
 
 async function addFeed() {
     const feedTitle = prompt("Enter a feed title");
-    const feedUrl = prompt("Enter a feed url");
+    let feedUrl = prompt("Enter a feed url");
 
-    const dataSnapshot = await getDoc(doc(db, 'userData', auth.currentUser.uid));
-    const updates = {}
-    updates[`feeds.${feedTitle}`] = [{feed: feedUrl, type: "feed"}];
-    updateDoc(dataSnapshot.ref, updates)
-    const data = dataSnapshot.data();
-    const feeds = data.feeds;
-    console.log(feeds)
-    const feedList = document.getElementById('feedList');
+    const response = await fetch("http://127.0.0.1:1235/checkFeed/?feed=" + feedUrl);
+    feedUrl = await response.json();
+    feedUrl = JSON.parse(feedUrl);
+    if (feedUrl.response === "BOZO") {
+        alert("INVALID FEED URL");
+    } else {
+        feedUrl = feedUrl.response;
+        const dataSnapshot = await getDoc(doc(db, 'userData', auth.currentUser.uid));
+        const updates = {}
+        updates[`feeds.${feedTitle}`] = [{feed: feedUrl, type: "feed"}];
+        updateDoc(dataSnapshot.ref, updates)
+        const data = dataSnapshot.data();
+        const feeds = data.feeds;
+        console.log(feeds)
+        const feedList = document.getElementById('feedList');
 
-    renderFeedsAndFolders(feeds, feedList);
+        renderFeedsAndFolders(feeds, feedList);
+    }
 }
 
 async function addFolder() {

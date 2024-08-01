@@ -48,7 +48,7 @@ body.light-mode {
 
 .post .light-mode {
     background-color: lightgray;
-    color: white;
+    color: black;
 }
 
 .post .light-mode a {
@@ -96,10 +96,20 @@ body.light-mode {
     top: 100%;
     left: 0;
     width: 200px;
-    padding: 10px;
-    border: 1px solid #ccc;
+    padding: 10px;;
+    background-color: black;
+}
+
+.expandable-widget.light-mode {
     background-color: #f9f9f9;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.widget-title.light-mode {
+    color: black;
+}
+
+.widget-choice.light-mode {
+    color: black;
 }
 
 .expandable-widget.show {
@@ -121,16 +131,13 @@ body.light-mode {
     color: white;
     position: fixed;
     height: 100%;
+    left: 0px;
 }
 
 
-.sidebar .light-mode {
-    width: 250px;
-    background-color: white;
+.sidebar.light-mode {
+    background-color: lightgray;
     color: #333;
-    padding: 15px;
-    position: fixed;
-    height: 100%;
 }
 
 #feedList {
@@ -147,10 +154,20 @@ body.light-mode {
     width: 100%;
     font-family: "OpenSans", sans-serif;
     color: white;
-    outline: 1px solid black;
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
     box-sizing: border-box;
     border-radius: 2px;
     padding: 0px;
     margin: 0px;
     margin-top: 1px;
+}
+
+#feedList li.light-mode {
+    color: black;
+    background-color: lightgray;
+}
+
+#feedList li :hover {
+    background-color: grey;
 }

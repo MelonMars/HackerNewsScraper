@@ -12,10 +12,10 @@ async function makeMainPage() {
     loading = true;
     loadingSpinner.style.display = 'block';
     try {
-        const response = await fetch("http://127.0.0.1:8000/links/?page=" + pageNumber);
+        const response = await fetch("http://127.0.0.1:1235/links/?page=" + pageNumber);
         let data = await response.json();
         data = JSON.parse(data);
-        for (var key of Object.keys(data)) {
+        for (const key of Object.keys(data)) {
             const clone = document.importNode(linkTemplate.content, true);
             const titleElem = clone.querySelector('.Title');
             const linkElem = clone.querySelector(".titleLink")
@@ -40,15 +40,32 @@ function onScroll() {
 
 function toggleColor() {
     const toggleElem = document.getElementById("colorToggle");
-    document.body.classList.toggle('light-mode');
-    if (document.body.classList.contains('light-mode')) {
-        localStorage.setItem('lightMode', 'enabled');
-        toggleElem.innerText = "🌑";
-    } else {
-        localStorage.setItem('lightMode', 'disable');
-        toggleElem.innerText = "☀️";
+    const isLightMode = document.body.classList.toggle('light-mode');
+
+    for (let element of document.getElementsByTagName('*')) {
+        if (isLightMode) {
+            element.classList.add('light-mode');
+        } else {
+            element.classList.remove('light-mode');
+        }
     }
+
+    localStorage.setItem('lightMode', isLightMode ? 'enabled' : 'disabled');
+
+    toggleElem.innerText = isLightMode ? "🌑" : "☀️";
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const savedMode = localStorage.getItem('lightMode');
+    if (savedMode === 'enabled') {
+        document.body.classList.add('light-mode');
+        document.getElementById("colorToggle").innerText = "🌑";
+    } else {
+        document.body.classList.remove('light-mode');
+        document.getElementById("colorToggle").innerText = "☀️";
+    }
+});
+
 
 makeMainPage();
 
