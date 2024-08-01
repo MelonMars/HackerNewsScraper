@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="index.css">
-    <title>Link Aggregator</title>
+    <script src="feeds.js" defer type="module"></script>
+    <title>GenialFeed</title>
 </head>
 <body>
     <div class="header">
@@ -11,6 +12,21 @@
         <button id="colorToggle">☀️</button>
         <a href="auth.html">👤</a>
         <a href="settings.html">⚙️</a>
+    </div>
+    <div class="sidebar">
+        <ul id="feedList">
+
+        </ul>
+        <button id="listToggleBtn">Collapse Feeds</button>
+        <button id="addContentBtn" onclick="contentAdd()">➕</button>
+        <div class="widget-container">
+            <div class="expandable-widget" id="feedAddWidget">
+                <div class="widget-title">Add a:</div>
+                <div class="widget-choice" onClick="addFeed()">Feed</div>
+                <div class="widget-choice" onClick="addFolder()">Folder</div>
+                <div class="widget-choice">AI Topic</div>
+            </div>
+        </div>
     </div>
     <template id="linkTemplate">
         <div class="post">
