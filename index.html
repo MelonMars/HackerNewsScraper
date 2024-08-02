@@ -14,9 +14,16 @@
         <a href="settings.html">⚙️</a>
     </div>
     <div class="sidebar">
+        <div id="feedListSpinner"></div>
         <ul id="feedList">
 
         </ul>
+        <div id="feedMenu" class="feedMenu">
+            <ul>
+                <li id="feedDelete">❌Delete</li>
+                <li>➕Add</li>
+            </ul>
+        </div>
         <button id="listToggleBtn">Collapse Feeds</button>
         <button id="addContentBtn" onclick="contentAdd()">➕</button>
         <div class="widget-container">

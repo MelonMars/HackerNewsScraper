@@ -17,6 +17,26 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app)
 
+function addFeedRightMenu() {
+    const targets = document.querySelectorAll('.feedItem');
+    const customMenu = document.getElementById('feedMenu');
+
+    targets.forEach(target => {
+        target.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            customMenu.style.top = `${e.pageY}px`;
+            customMenu.style.left = `${e.pageX}px`;
+            customMenu.style.display = 'block';
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!customMenu.contains(e.target)) {
+            customMenu.style.display = 'none';
+        }
+    });
+}
+
 function renderFeedsAndFolders(feeds, feedList) {
     feedList.innerHTML = '';
 
@@ -26,6 +46,7 @@ function renderFeedsAndFolders(feeds, feedList) {
 
         if (isFolder) {
             const folderItem = document.createElement('li');
+            folderItem.classList.add("feedItem");
             folderItem.textContent = key;
             folderItem.setAttribute('data-type', 'folder');
             folderItem.setAttribute('draggable', 'true');
@@ -37,7 +58,6 @@ function renderFeedsAndFolders(feeds, feedList) {
             subList.style.display = 'none';
 
             for (const subKey in items[0].feeds) {
-                const feedData = items[0].feeds[subKey];
                 const feedItem = document.createElement('li');
                 feedItem.textContent = subKey;
                 feedItem.setAttribute('data-type', 'feed');
@@ -59,6 +79,7 @@ function renderFeedsAndFolders(feeds, feedList) {
             });
         } else {
             const feedItem = document.createElement('li');
+            feedItem.classList.add("feedItem");
             feedItem.textContent = key;
             feedItem.setAttribute('data-type', 'feed');
             feedItem.setAttribute('draggable', 'true');
@@ -69,19 +90,39 @@ function renderFeedsAndFolders(feeds, feedList) {
     }
 }
 
+function collapseListButton(feeds, feedList) {
+    document.getElementById('listToggleBtn').addEventListener('click', function () {
+        const listItems = document.querySelectorAll('#feedList li');
+        console.log(listItems);
+        const isCollapsed = listItems[3].classList.contains('hidden');
+        console.log(isCollapsed);
+        listItems.forEach((item, index) => {
+            if (index >= 3) {
+                item.classList.toggle('hidden', !isCollapsed);
+            }
+        });
+
+        this.textContent = isCollapsed ? 'Collapse List!' : 'Expand List';
+        renderFeedsAndFolders(feeds, feedList)
+    });
+}
 
 onAuthStateChanged(auth, async (user) => {
     if (user) {
 
         try {
+            const listSpinner = document.getElementById('feedListSpinner');
+            listSpinner.style.display = 'block';
             const dataSnapshot = await getDoc(doc(db, 'userData', user.uid));
             const data = dataSnapshot.data();
             const feeds = data.feeds;
             console.log(feeds)
             const feedList = document.getElementById('feedList');
 
+            listSpinner.style.display = 'none';
             renderFeedsAndFolders(feeds, feedList);
-
+            addFeedRightMenu();
+            collapseListButton(feeds, feedList);
             let draggedItem = null;
 
             document.addEventListener('dragstart', function(event) {
