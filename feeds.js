@@ -17,6 +17,10 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app)
 
+const linkContainer = document.getElementById("linkContainer");
+const linkTemplate = document.getElementById("linkTemplate");
+const loadingSpinner = document.getElementById('loadingSpinner');
+
 function addFeedRightMenu() {
     const targets = document.querySelectorAll('.feedItem');
     const customMenu = document.getElementById('feedMenu');
@@ -35,6 +39,27 @@ function addFeedRightMenu() {
             customMenu.style.display = 'none';
         }
     });
+}
+
+async function feedClick(feed) {
+    let loading = false;
+    loading = true;
+    loadingSpinner.style.display = 'block';
+    try {
+        const response = await fetch("http://127.0.0.1:8000/feed/?feedUrl=" + feed);
+        let data = await response.json();
+        data = JSON.parse(data);
+        for (let i=0;i<data.response.entries.length;i++) {
+            const clone = document.importNode(linkTemplate.content, true);
+            const titleElem = clone.querySelector('.Title');
+            const linkElem = clone.querySelector(".titleLink");
+            titleElem.textContent = data.response.entries[i].title;
+            linkElem.href = data.response.entries[i].link;
+            linkContainer.appendChild(clone)
+        }
+    } catch (e) {
+
+    }
 }
 
 function renderFeedsAndFolders(feeds, feedList) {
@@ -80,6 +105,9 @@ function renderFeedsAndFolders(feeds, feedList) {
         } else {
             const feedItem = document.createElement('li');
             feedItem.classList.add("feedItem");
+            feedItem.addEventListener('click', function() {
+                feedClick(feeds[key])
+            })
             feedItem.textContent = key;
             feedItem.setAttribute('data-type', 'feed');
             feedItem.setAttribute('draggable', 'true');
@@ -214,13 +242,14 @@ async function addFeed() {
     const feedTitle = prompt("Enter a feed title");
     let feedUrl = prompt("Enter a feed url");
 
-    const response = await fetch("http://127.0.0.1:1235/checkFeed/?feed=" + feedUrl);
-    feedUrl = await response.json();
-    feedUrl = JSON.parse(feedUrl);
-    if (feedUrl.response === "BOZO") {
+    console.log("http://127.0.0.1:8000/checkFeed/?feedUrl=" + feedUrl);
+    const response = await fetch("http://127.0.0.1:8000/checkFeed/?feedUrl=" + feedUrl);
+    let feed = await response.json();
+    console.log(feedUrl);
+    if (feed.response === "BOZO") {
         alert("INVALID FEED URL");
     } else {
-        feedUrl = feedUrl.response;
+        feedUrl = feed.response;
         const dataSnapshot = await getDoc(doc(db, 'userData', auth.currentUser.uid));
         const updates = {}
         updates[`feeds.${feedTitle}`] = [{feed: feedUrl, type: "feed"}];

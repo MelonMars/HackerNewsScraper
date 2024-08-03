@@ -6,6 +6,7 @@ const colorToggle = document.getElementById("colorToggle");
 let pageNumber = 0
 let loading = false;
 
+/*
 async function makeMainPage() {
     const linksPerPage = 10;
     if (loading) return;
@@ -37,7 +38,7 @@ function onScroll() {
         makeMainPage();
     }
 }
-
+*/
 function toggleColor() {
     const toggleElem = document.getElementById("colorToggle");
     const isLightMode = document.body.classList.toggle('light-mode');
@@ -66,10 +67,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-
+/*
 makeMainPage();
 
 window.addEventListener('scroll', onScroll);
+ */
 
 colorToggle.addEventListener('click', toggleColor);
 if (localStorage.getItem('lightMode') === 'enabled') {
