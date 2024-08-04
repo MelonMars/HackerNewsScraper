@@ -63,6 +63,7 @@ body.light-mode {
     padding: 10px;
     color: white;
     border-radius: 10px;
+    /* CAN NOT make this absolute */
 }
 
 .header h2 {
@@ -202,4 +203,23 @@ body.light-mode {
 
 .hidden {
     display: none !important;
+}
+
+#pageDownBtn {
+    margin: 10px;
+    color: black;
+    align-self: center;
+    background-color: white;
+}
+
+#pageDownBtn.light-mode {
+    background-color: black;
+    color: white;
+}
+
+.linkContainerWrapper {
+    display: flex;
+    flex-direction: column;
+    height: 95vh;
+    overflow: hidden;
 }

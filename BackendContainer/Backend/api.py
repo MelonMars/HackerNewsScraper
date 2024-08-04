@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from scraper import scrape
 import feedparser
 from urllib.parse import urljoin
 
@@ -11,12 +10,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.get("/hackernews/")
-async def read_links(page):
-    return scrape(page)
-
 
 @app.get("/checkFeed/")
 async def checkFeed(feedUrl):
@@ -36,10 +29,12 @@ async def checkFeed(feedUrl):
 
 
 @app.get("/feed/")
-async def read_feed(feed):
+async def read_feed(feed, page):
+    print(feed)
     feed = feedparser.parse(feed)
     if feed.bozo:
         return {"response": "FEEDBROKE"}
+    print(feed)
     return {
         "response": {
             "feedInfo": {
@@ -50,12 +45,12 @@ async def read_feed(feed):
             },
             "entries": [
                 {
-                    "title": entry.get["title"],
-                    "link": entry.get["link"],
-                    "description": entry.get["description"],
-                    "published": entry.get["published"],
+                    "title": entry.get("title"),
+                    "link": entry.get("link"),
+                    "description": entry.get("description"),
+                    "published": entry.get("published"),
                 }
-                for entry in feed.entries
+                for entry in feed.entries[((int(page)-1)*10):(int(page)*10)]
             ]
         }
     }

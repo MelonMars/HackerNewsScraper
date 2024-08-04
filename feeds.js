@@ -20,6 +20,9 @@ const db = getFirestore(app)
 const linkContainer = document.getElementById("linkContainer");
 const linkTemplate = document.getElementById("linkTemplate");
 const loadingSpinner = document.getElementById('loadingSpinner');
+let page = 1;
+let loading = false;
+let currentFeed = "none";
 
 function addFeedRightMenu() {
     const targets = document.querySelectorAll('.feedItem');
@@ -41,14 +44,16 @@ function addFeedRightMenu() {
     });
 }
 
-async function feedClick(feed) {
-    let loading = false;
+async function feedClick(feed, page, override) {
+    if (currentFeed === feed && !override) return;
+    currentFeed = feed;
     loading = true;
     loadingSpinner.style.display = 'block';
     try {
-        const response = await fetch("http://127.0.0.1:8000/feed/?feedUrl=" + feed);
+        const response = await fetch(`http://127.0.0.1:8000/feed/?feed=${feed}&page=${page}`);
+        console.log("Got Data!");
         let data = await response.json();
-        data = JSON.parse(data);
+        console.log(data);
         for (let i=0;i<data.response.entries.length;i++) {
             const clone = document.importNode(linkTemplate.content, true);
             const titleElem = clone.querySelector('.Title');
@@ -56,9 +61,14 @@ async function feedClick(feed) {
             titleElem.textContent = data.response.entries[i].title;
             linkElem.href = data.response.entries[i].link;
             linkContainer.appendChild(clone)
+            console.log("Added Elem!");
         }
+        console.log("Finished adding!");
     } catch (e) {
-
+        console.error(e)
+    } finally {
+        loading = false;
+        loadingSpinner.style.display = 'none';
     }
 }
 
@@ -106,7 +116,9 @@ function renderFeedsAndFolders(feeds, feedList) {
             const feedItem = document.createElement('li');
             feedItem.classList.add("feedItem");
             feedItem.addEventListener('click', function() {
-                feedClick(feeds[key])
+                console.log(feeds[key][0])
+                page = 1;
+                feedClick(feeds[key][0]["feed"], page, false)
             })
             feedItem.textContent = key;
             feedItem.setAttribute('data-type', 'feed');
@@ -236,7 +248,17 @@ function contentAdd() {
     const widget = document.getElementById("feedAddWidget");
     console.log("Feed adding");
     widget.classList.toggle("show");
+    let ignoreClick = true;
+    document.addEventListener('click', function(event) {
+        if (widget.classList.contains('show')) {
+            if (!widget.contains(event.target) && event.target.id !== 'feedAddWidget' && !ignoreClick) {
+                widget.classList.remove('show');
+            }
+        }
+        ignoreClick = false;
+    });
 }
+
 
 async function addFeed() {
     const feedTitle = prompt("Enter a feed title");
@@ -278,6 +300,24 @@ async function addFolder() {
     renderFeedsAndFolders(feeds, feedList);
 }
 
+function scrollDown() {
+    page++;
+    const feed = document.querySelector('.feedItem[data-type="feed"]').getAttribute('data-name');
+    console.log(feed);
+    feedClick(currentFeed, page, true);
+}
+
 window.contentAdd = contentAdd;
 window.addFeed = addFeed;
 window.addFolder = addFolder;
+window.scrollDown = scrollDown;
+
+linkContainer.addEventListener('scroll', function () {
+    if (linkContainer.scrollTop + linkContainer.clientHeight >= linkContainer.scrollHeight + 2 && !loading) {
+        console.log("SCROLLED DOWN, EXPANDING!");
+        page++;
+        const feed = document.querySelector('.feedItem[data-type="feed"]').getAttribute('data-name');
+        console.log(feed);
+        feedClick(currentFeed, page, true);
+    }
+});
