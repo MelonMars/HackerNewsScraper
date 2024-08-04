@@ -20,7 +20,8 @@ const db = getFirestore(app)
 const linkContainer = document.getElementById("linkContainer");
 const linkTemplate = document.getElementById("linkTemplate");
 const loadingSpinner = document.getElementById('loadingSpinner');
-let page = 1;
+const scrollDownBtn = document.getElementById("pageDownBtn");
+scrollDownBtn.classList.add("hidden");
 let loading = false;
 let currentFeed = "none";
 
@@ -128,6 +129,7 @@ function renderFeedsAndFolders(feeds, feedList) {
             feedList.appendChild(feedItem);
         }
     }
+    scrollDownBtn.classList.remove('hidden');
 }
 
 function collapseListButton(feeds, feedList) {
@@ -155,8 +157,24 @@ onAuthStateChanged(auth, async (user) => {
             listSpinner.style.display = 'block';
             const dataSnapshot = await getDoc(doc(db, 'userData', user.uid));
             const data = dataSnapshot.data();
-            const feeds = data.feeds;
-            console.log(feeds)
+            let feeds = []
+            try {
+                feeds = data.feeds;
+                if (!feeds || feeds.length === 0) {
+                    const feedList = document.getElementById('feedList');
+                    feedList.innerHTML = '<p>No feeds found</p>';
+
+                    listSpinner.style.display = 'none';
+                    return;
+                }
+
+            } catch (e) {
+                const feedList = document.getElementById('feedList');
+                feedList.innerHTML = '<p>No feeds found</p>';
+
+                listSpinner.style.display = 'none';
+                return;
+            }
             const feedList = document.getElementById('feedList');
 
             listSpinner.style.display = 'none';

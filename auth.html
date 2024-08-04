@@ -4,19 +4,33 @@
     <meta charset="UTF-8">
     <title>LinkAggregator - Authentication</title>
     <script src="auth.js" defer type="module"></script>
+    <link rel="stylesheet" href="auth.css">
 </head>
 <body>
     <div class="loggedOut">
-        <button id="google-login-btn" class="google-button">
-            Login with Google
-        </button>
+        <form id="emailPasswordLogin">
+            <label for="email">Enter email:</label>
+            <input type="email" id="emailInput" required>
+            <br>
+            <label for="password">Enter password:</label>
+            <input type="password" id="passwordInput" required>
+            <br>
+            <div id="emailPasswordButtonWrapper">
+                <button type="submit">Sign up</button>
+                <button type="button" id="toggleUpInEmail">I already have an account!</button>
+            </div>
+            <div id="alternativeLoginWrapper">
+                <button id="google-login-btn" class="google-button">
+                    <img src="google.png" alt="GoogleLogo">
+                    Login with Google
+                </button>
+            </div>
+        </form>
     </div>
     <div class="loggedIn">
         <button id="logout">
             Logout
         </button>
-    </div>
-    <div class="loggedIn">
         <a href="index.html">🏠</a>
     </div>
 </body>

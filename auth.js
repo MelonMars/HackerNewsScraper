@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged,signOut } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js"
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged,signOut,createUserWithEmailAndPassword,signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js"
 import { collection, addDoc, getFirestore, getDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js"
 
 const firebaseConfig = {
@@ -76,5 +76,49 @@ onAuthStateChanged(auth, (user) => {
             });
 
         })
+
+        let isSignUpMode = true;
+        const signUpForm = document.getElementById("emailPasswordLogin");
+
+        function emailPasswordSignup(e) {
+            e.preventDefault();
+            const email = document.getElementById("emailInput").value;
+            const password = document.getElementById("passwordInput").value;
+            if (isSignUpMode) {
+                createUserWithEmailAndPassword(auth, email, password)
+                    .then((userCredential) => {
+                        const user = userCredential.user;
+                        console.log("Signed up as: ", user);
+                    })
+                    .catch((err) => {
+                        console.error(err);
+                    });
+            } else {
+                signInWithEmailAndPassword(auth, email, password)
+                    .then((userCredential) => {
+                        const user = userCredential.user;
+                        console.log("Signed in as: ", user);
+                    })
+                    .catch((err) => {
+                        console.error(err);
+                    });
+            }
+        }
+
+        const toggleUpInEmail = document.getElementById("toggleUpInEmail");
+
+        function changeSignUpSignIn() {
+            isSignUpMode = !isSignUpMode;
+            if (isSignUpMode) {
+                toggleUpInEmail.textContent = "I already have an account!"
+                signUpForm.querySelector('button[type="submit"]').textContent = "Sign up!";
+            } else {
+                toggleUpInEmail.textContent = "I need an account!"
+                signUpForm.querySelector('button[type="submit"]').textContent = "Sign in!";
+            }
+        }
+
+        signUpForm.addEventListener("submit", emailPasswordSignup);
+        toggleUpInEmail.addEventListener("click", changeSignUpSignIn);
     }
 });
