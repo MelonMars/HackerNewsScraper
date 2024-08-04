@@ -18,16 +18,31 @@
     border-radius: 16px;
 }
 
+.google-button.light-mode {
+    color: black;
+    background-color: lightblue;
+}
+
 .google-button img {
     height: 90%;
 }
 
+body {
+    background-color: #1e1c1c;
+}
+
 #emailPasswordLogin {
+    margin: 10px auto;
+    font-family: "OpenSans", sans-serif;
     max-width: 35%;
-    margin: 0 auto;
     padding: 5%;
     border: 1px solid lightgrey;
     border-radius: 8px;
+    background-color: #504a4a;
+
+}
+
+#emailPasswordLogin.light-mode {
     background-color: white;
 }
 
@@ -65,7 +80,46 @@
 }
 
 #alternativeLoginWrapper {
+    font-family: "OpenSans", sans-serif;
     display: flex;
     align-content: center;
     justify-content: center;
+}
+
+#title {
+    padding: 5px;
+    font-family: "OpenSans", sans-serif;
+    text-align: center;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #808080;
+    padding: 10px;
+    color: white;
+    border-radius: 10px;
+    transition: border-color 0.3s ease;
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 16px;
+    flex-grow: 1;
+}
+
+.header a, .header button {
+    margin: 0;
+    font-size: 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+}
+
+.header a p {
+    display: inline;
+    margin: 0;
 }

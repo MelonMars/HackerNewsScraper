@@ -22,19 +22,28 @@ const linkTemplate = document.getElementById("linkTemplate");
 const loadingSpinner = document.getElementById('loadingSpinner');
 const scrollDownBtn = document.getElementById("pageDownBtn");
 scrollDownBtn.classList.add("hidden");
+console.log("Added class!")
 let loading = false;
 let currentFeed = "none";
+let page = 1;
+let currentTarget = null
+
+function deleteFeed(feed) {
+    console.log(feed);
+}
 
 function addFeedRightMenu() {
     const targets = document.querySelectorAll('.feedItem');
     const customMenu = document.getElementById('feedMenu');
+    const feedDelete = document.getElementById("feedDelete");
 
     targets.forEach(target => {
         target.addEventListener('contextmenu', function(e) {
             e.preventDefault();
+            currentTarget = target;
             customMenu.style.top = `${e.pageY}px`;
             customMenu.style.left = `${e.pageX}px`;
-            customMenu.style.display = 'block';
+            customMenu.style.display = 'flex';
         });
     });
 
@@ -43,6 +52,13 @@ function addFeedRightMenu() {
             customMenu.style.display = 'none';
         }
     });
+
+    feedDelete.addEventListener('click', function() {
+        if (currentTarget) {
+            deleteFeed(currentTarget);
+            customMenu.style.display = 'none';
+        }
+    })
 }
 
 async function feedClick(feed, page, override) {
@@ -71,6 +87,7 @@ async function feedClick(feed, page, override) {
         loading = false;
         loadingSpinner.style.display = 'none';
     }
+    scrollDownBtn.classList.remove('hidden');
 }
 
 function renderFeedsAndFolders(feeds, feedList) {
@@ -129,7 +146,6 @@ function renderFeedsAndFolders(feeds, feedList) {
             feedList.appendChild(feedItem);
         }
     }
-    scrollDownBtn.classList.remove('hidden');
 }
 
 function collapseListButton(feeds, feedList) {

@@ -30,6 +30,10 @@ body {
     color: white;
 }
 
+.post:hover {
+    background-color: #3e3c3c;
+}
+
 #loadingSpinner {
     display: none;
     border: 8px solid #f3f3f3;
@@ -46,12 +50,12 @@ body.light-mode {
     background-color: white;
 }
 
-.post .light-mode {
+.post.light-mode {
     background-color: lightgray;
-    color: black;
+    color: black
 }
 
-.post .light-mode a {
+.post.light-mode a {
     color: black;
 }
 
@@ -97,12 +101,22 @@ body.light-mode {
     top: 100%;
     left: 0;
     width: 200px;
-    padding: 10px;;
+    padding: 10px;
     background-color: black;
+}
+
+.widget-choice:hover {
+    background-color: #1e1c1c;
+    cursor: pointer;
 }
 
 .expandable-widget.light-mode {
     background-color: #f9f9f9;
+}
+
+.widget-choice.light-mode:hover {
+    background-color: #a6a5a5;
+    cursor: pointer;
 }
 
 .widget-title.light-mode {
@@ -177,6 +191,18 @@ body.light-mode {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     color: black;
     font-family: "OpenSans", sans-serif;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 10px;
+}
+
+.feedMenu ul {
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
 }
 
 .feedMenu li {
@@ -185,6 +211,17 @@ body.light-mode {
     box-sizing: border-box;
     border-radius: 2px;
     margin-top: 1px;
+    padding: 10px 20px;
+}
+
+.feedMenu li:hover {
+    background-color: grey;
+    cursor: pointer;
+}
+
+.feedMenu.light-mode li:hover {
+    background-color: grey;
+    cursor: pointer;
 }
 
 #feedListSpinner {
@@ -207,9 +244,23 @@ body.light-mode {
 
 #pageDownBtn {
     margin: 10px;
+    padding: 10px;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: rgba(156, 149, 149, 0.7);
     color: black;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     align-self: center;
-    background-color: white;
+}
+
+#pageDownBtn:hover {
+    background-color: rgba(58, 57, 57, 0.7);
 }
 
 #pageDownBtn.light-mode {
@@ -222,4 +273,8 @@ body.light-mode {
     flex-direction: column;
     height: 95vh;
     overflow: hidden;
+}
+
+.post, .header, .sidebar, .expandable-widget, .feedMenu, #feedList li, #pageDownBtn {
+    transition: background-color 0.3s ease, color 0.3s ease !important;
 }

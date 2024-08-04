@@ -122,3 +122,38 @@ onAuthStateChanged(auth, (user) => {
         toggleUpInEmail.addEventListener("click", changeSignUpSignIn);
     }
 });
+
+const colorToggle = document.getElementById("colorToggle");
+
+function toggleColor() {
+    const toggleElem = document.getElementById("colorToggle");
+    const isLightMode = document.body.classList.toggle('light-mode');
+
+    for (let element of document.getElementsByTagName('*')) {
+        if (isLightMode) {
+            element.classList.add('light-mode');
+        } else {
+            element.classList.remove('light-mode');
+        }
+    }
+
+    localStorage.setItem('lightMode', isLightMode ? 'enabled' : 'disabled');
+
+    toggleElem.innerText = isLightMode ? "🌑" : "☀️";
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const savedMode = localStorage.getItem('lightMode');
+    if (savedMode === 'enabled') {
+        document.body.classList.add('light-mode');
+        document.getElementById("colorToggle").innerText = "🌛";
+    } else {
+        document.body.classList.remove('light-mode');
+        document.getElementById("colorToggle").innerText = "☀️";
+    }
+});
+
+colorToggle.addEventListener('click', toggleColor);
+if (localStorage.getItem('lightMode') === 'enabled') {
+    document.body.classList.add('light-mode');
+}

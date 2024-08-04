@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedMode = localStorage.getItem('lightMode');
     if (savedMode === 'enabled') {
         document.body.classList.add('light-mode');
-        document.getElementById("colorToggle").innerText = "🌑";
+        document.getElementById("colorToggle").innerText = "🌛";
     } else {
         document.body.classList.remove('light-mode');
         document.getElementById("colorToggle").innerText = "☀️";

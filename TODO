@@ -1,3 +1,11 @@
 This is my todolist not for stuff I actually need to do, but for stuff I just don't want to forget:
+    -Make delete work from feeds
+    -Add reading feed folder
+    -Make alerts look good
+    -Add renaming
+    -Make inputs look good (don't have them just be popups at the top of the page, put them in the middle)
+    -Add pop ups for reading the articles
+    -Add caching of feeds in DB
     -Secure db
+    -Make logo
     -Make settings page look nice
