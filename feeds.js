@@ -1,6 +1,6 @@
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getFirestore, getDoc, doc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+import { getFirestore, getDoc, doc, updateDoc, setDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDkoQkl9adRsW67H_jT7bWpH9QDRU44wS4",
@@ -26,21 +26,40 @@ console.log("Added class!")
 let loading = false;
 let currentFeed = "none";
 let page = 1;
-let currentTarget = null
 
-function deleteFeed(feed) {
+async function deleteFeed(feed, user) {
     console.log(feed);
+    const dataSnap = await doc(db, 'userData', user.uid);
+    await updateDoc(dataSnap, {
+            [`feeds.${feed}`]: deleteField()
+        });
 }
 
-function addFeedRightMenu() {
+function addFeedRightMenu(user) {
     const targets = document.querySelectorAll('.feedItem');
     const customMenu = document.getElementById('feedMenu');
     const feedDelete = document.getElementById("feedDelete");
+    let currentTarget = null;
 
     targets.forEach(target => {
         target.addEventListener('contextmenu', function(e) {
             e.preventDefault();
-            currentTarget = target;
+            currentTarget = e.currentTarget;
+
+            let path = [];
+            let el = currentTarget;
+
+            while (el) {
+                if (el.dataset.name) {
+                    path.unshift(el.dataset.name);
+                }
+                el = el.parentElement.closest('.feedItem');
+            }
+
+            if (path.length > 0) {
+                currentTarget = path.join('.');
+            }
+
             customMenu.style.top = `${e.pageY}px`;
             customMenu.style.left = `${e.pageX}px`;
             customMenu.style.display = 'flex';
@@ -55,10 +74,10 @@ function addFeedRightMenu() {
 
     feedDelete.addEventListener('click', function() {
         if (currentTarget) {
-            deleteFeed(currentTarget);
+            deleteFeed(currentTarget, user);
             customMenu.style.display = 'none';
         }
-    })
+    });
 }
 
 async function feedClick(feed, page, override) {
@@ -167,7 +186,6 @@ function collapseListButton(feeds, feedList) {
 
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-
         try {
             const listSpinner = document.getElementById('feedListSpinner');
             listSpinner.style.display = 'block';
@@ -183,7 +201,7 @@ onAuthStateChanged(auth, async (user) => {
                     listSpinner.style.display = 'none';
                     return;
                 }
-
+                console.log(feeds)
             } catch (e) {
                 const feedList = document.getElementById('feedList');
                 feedList.innerHTML = '<p>No feeds found</p>';
@@ -195,7 +213,7 @@ onAuthStateChanged(auth, async (user) => {
 
             listSpinner.style.display = 'none';
             renderFeedsAndFolders(feeds, feedList);
-            addFeedRightMenu();
+            addFeedRightMenu(user);
             collapseListButton(feeds, feedList);
             let draggedItem = null;
 
