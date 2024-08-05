@@ -82,22 +82,16 @@ function addFeedRightMenu(user) {
     });
 }
 
-async function feedClick(feed, page, override) {
-    if (currentFeed === feed && !override) return;
-    currentFeed = feed;
-    loading = true;
-    loadingSpinner.style.display = 'block';
+async function feedClick(feed, feedDB) {
     try {
-        const response = await fetch(`http://127.0.0.1:8000/feed/?feed=${feed}&page=${page}`);
-        console.log("Got Data!");
-        let data = await response.json();
-        console.log(data);
-        for (let i=0;i<data.response.entries.length;i++) {
+        const data = feedDB[feed];
+        console.log(data)
+        for (let i=0;i<data.entries.length;i++) {
             const clone = document.importNode(linkTemplate.content, true);
             const titleElem = clone.querySelector('.Title');
             const linkElem = clone.querySelector(".titleLink");
-            titleElem.textContent = data.response.entries[i].title;
-            linkElem.href = data.response.entries[i].link;
+            titleElem.textContent = data.entries[i].title;
+            linkElem.href = data.entries[i].link;
             linkContainer.appendChild(clone)
             console.log("Added Elem!");
         }
@@ -111,7 +105,7 @@ async function feedClick(feed, page, override) {
     scrollDownBtn.classList.remove('hidden');
 }
 
-function renderFeedsAndFolders(feeds, feedList) {
+function renderFeedsAndFolders(feeds, feedList, feedDB) {
     feedList.innerHTML = '';
 
     for (const key in feeds) {
@@ -157,7 +151,7 @@ function renderFeedsAndFolders(feeds, feedList) {
             feedItem.addEventListener('click', function() {
                 console.log(feeds[key][0])
                 page = 1;
-                feedClick(feeds[key][0]["feed"], page, false)
+                feedClick(feeds[key][0]["feed"], feedDB);
             })
             feedItem.textContent = key;
             feedItem.setAttribute('data-type', 'feed');
@@ -184,6 +178,19 @@ function collapseListButton(feeds, feedList) {
         this.textContent = isCollapsed ? 'Collapse List!' : 'Expand List';
         renderFeedsAndFolders(feeds, feedList)
     });
+}
+
+async function createFeedDB(feedList, feeds) {
+    let feedData = {};
+    for (let feed of Object.keys(feeds)) {
+        const response = await fetch(`http://127.0.0.1:8000/feed/?feed=${feeds[feed][0]["feed"]}&page=1`);
+            let fdata = await response.json();
+            feedData[feed] = fdata.response;
+            console.log(`feedData ${feed}: `,feedData[feed])
+    }
+
+    console.log("feedData: ", feedData);
+    return feedData;
 }
 
 onAuthStateChanged(auth, async (user) => {
@@ -213,8 +220,10 @@ onAuthStateChanged(auth, async (user) => {
             }
             const feedList = document.getElementById('feedList');
 
+            const feedData = await createFeedDB(feedList, feeds)
             listSpinner.style.display = 'none';
-            renderFeedsAndFolders(feeds, feedList);
+            console.log("feedDB: ",feedData);
+            renderFeedsAndFolders(feeds, feedList, feedData);
             addFeedRightMenu(user);
             collapseListButton(feeds, feedList);
             let draggedItem = null;
@@ -368,14 +377,15 @@ async function addFeed() {
     const closeButton = document.getElementById("closeCustomPrompt");
 
     function getInput(prompt) {
-        inputModal.classList.remove('hidden');
         return new Promise((resolve, reject) => {
+            inputModal.classList.remove('hidden');
+            document.getElementById("promptInputLabel").innerText = prompt;
 
             function handleInput() {
                 const inputValue = document.getElementById("promptInput").value;
                 document.getElementById("promptInputSubmit").removeEventListener('click', handleInput);
-                document.getElementById("promptInputLabel").innerText = prompt
                 closeButton.removeEventListener('click', handleClose);
+                inputModal.classList.add('hidden');
                 resolve(inputValue);
             }
 
@@ -396,6 +406,7 @@ async function addFeed() {
         const feedUrl = await getInput("Enter feed url:");
         inputModal.classList.add('hidden');
 
+        loadingSpinner.style.display = 'block'
         console.log("http://127.0.0.1:8000/checkFeed/?feedUrl=" + feedUrl);
         const response = await fetch("http://127.0.0.1:8000/checkFeed/?feedUrl=" + feedUrl);
         const feed = await response.json();
@@ -415,6 +426,7 @@ async function addFeed() {
 
             renderFeedsAndFolders(feeds, feedList);
         }
+        loadingSpinner.style.display = 'none';
     } catch (e) {
         console.log(e);
     }

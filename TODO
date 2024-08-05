@@ -1,10 +1,10 @@
 This is my todolist not for stuff I actually need to do, but for stuff I just don't want to forget:
-    -Add indicator for when a feed is being added
     -Make testing all feeds on startup
     -Make broken feeds be red
     -Add renaming feeds
     -Add reading feed folder
     -Make alerts look good
+    -Is the adding feed reload working??
     -Add renaming
     -Add pop ups for reading the articles
     -Add caching of feeds in DB

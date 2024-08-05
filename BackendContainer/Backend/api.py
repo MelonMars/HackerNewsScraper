@@ -27,7 +27,7 @@ async def checkFeed(feedUrl):
 
 
 @app.get("/feed/")
-async def read_feed(feed, page):
+async def read_feed(feed):
     print(feed)
     feed = feedparser.parse(feed)
     if feed.bozo:
@@ -48,7 +48,7 @@ async def read_feed(feed, page):
                     "description": entry.get("description"),
                     "published": entry.get("published"),
                 }
-                for entry in feed.entries[((int(page)-1)*10):(int(page)*10)]
+                for entry in feed.entries
             ]
         }
     }
