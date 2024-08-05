@@ -37,10 +37,36 @@ async function deleteFeed(feed, user) {
         });
 }
 
+async function renameFeed(feed, newName, user) {
+    try {
+        console.log(`Renaming feed ${feed} to ${newName}`);
+
+        const dataSnap = await doc(db, 'userData', user.uid);
+        const docData = await getDoc(dataSnap);
+
+        if (docData.exists()) {
+            const feedData = docData.data().feeds[feed];
+
+            await updateDoc(dataSnap, {
+                [`feeds.${feed}`]: deleteField()
+            });
+            await updateDoc(dataSnap, {
+                [`feeds.${newName}`]: feedData
+            });
+            console.log(`Feed renamed from ${feed} to ${newName}`);
+        } else {
+            console.error('No such document!');
+        }
+    } catch (error) {
+        console.error('Error renaming feed: ', error);
+    }
+}
+
 function addFeedRightMenu(user) {
     const targets = document.querySelectorAll('.feedItem');
     const customMenu = document.getElementById('feedMenu');
     const feedDelete = document.getElementById("feedDelete");
+    const feedRename = document.getElementById("feedRename");
     let currentTarget = null;
 
     targets.forEach(target => {
@@ -80,10 +106,25 @@ function addFeedRightMenu(user) {
             customMenu.style.display = 'none';
         }
     });
+
+    feedRename.addEventListener('click', function() {
+        if (currentTarget) {
+            const newName = prompt("Enter new name for the feed:");
+            if (newName) {
+                renameFeed(currentTarget, newName, user);
+                customMenu.style.display = 'none';
+            }
+        }
+    });
+}
+
+function openPost(link, title) {
+    window.open(link, title, "width=600, height=400, scrollbars=yes")
 }
 
 async function feedClick(feed, feedDB) {
     try {
+        console.log(feedDB);
         const data = feedDB[feed];
         console.log(data)
         for (let i=0;i<data.entries.length;i++) {
@@ -91,13 +132,47 @@ async function feedClick(feed, feedDB) {
             const titleElem = clone.querySelector('.Title');
             const linkElem = clone.querySelector(".titleLink");
             titleElem.textContent = data.entries[i].title;
-            linkElem.href = data.entries[i].link;
+            linkElem.href = "#";
+            linkElem.onclick = function () {
+                openPost(data.entries[i].link, titleElem.textContent = data.entries[i].title);
+                return false;
+            }
             linkContainer.appendChild(clone)
             console.log("Added Elem!");
         }
         console.log("Finished adding!");
     } catch (e) {
         console.error(e)
+    } finally {
+        loading = false;
+        loadingSpinner.style.display = 'none';
+    }
+    scrollDownBtn.classList.remove('hidden');
+}
+
+async function folderClick(feeds, feedDB) {
+    try {
+        console.log(feedDB);
+        console.log(feeds);
+
+        for (let feed of feeds) {
+            const data = feedDB[feed];
+            console.log(data);
+
+            for (let i = 0; i < data.entries.length; i++) {
+                const clone = document.importNode(linkTemplate.content, true);
+                const titleElem = clone.querySelector('.Title');
+                const linkElem = clone.querySelector(".titleLink");
+                titleElem.textContent = data.entries[i].title;
+                linkElem.href = data.entries[i].link;
+                linkContainer.appendChild(clone);
+                console.log("Added Elem!");
+            }
+        }
+
+        console.log("Finished adding all feeds!");
+    } catch (e) {
+        console.error(e);
     } finally {
         loading = false;
         loadingSpinner.style.display = 'none';
@@ -121,6 +196,14 @@ function renderFeedsAndFolders(feeds, feedList, feedDB) {
             folderItem.setAttribute('data-name', key);
             folderItem.style.cursor = 'pointer';
 
+            const arrow = document.createElement('span');
+            arrow.classList.add('arrow');
+            arrow.textContent = '►';  // Use ► for closed state
+            arrow.style.cursor = 'pointer';
+            arrow.style.marginRight = '5px';
+
+            folderItem.prepend(arrow);
+
             const subList = document.createElement('ul');
             subList.setAttribute('data-folder', key);
             subList.style.display = 'none';
@@ -138,21 +221,35 @@ function renderFeedsAndFolders(feeds, feedList, feedDB) {
             folderItem.appendChild(subList);
             feedList.appendChild(folderItem);
 
-            folderItem.addEventListener('click', function() {
+            arrow.addEventListener('click', function(e) {
+                e.stopPropagation();
                 if (subList.style.display === 'none') {
                     subList.style.display = 'block';
+                    arrow.textContent = '▼';  // Use ▼ for open state
                 } else {
                     subList.style.display = 'none';
+                    arrow.textContent = '►';
                 }
+            });
+
+            folderItem.addEventListener('click', function() {
+                let subLis = subList.querySelectorAll("li");
+                let feedNames = [];
+                for (let li of subLis) {
+                    feedNames.push(li.getAttribute('data-name'));
+                }
+                console.log("Folder click:", feedNames);
+                folderClick(feedNames, feedDB);
             });
         } else {
             const feedItem = document.createElement('li');
             feedItem.classList.add("feedItem");
             feedItem.addEventListener('click', function() {
-                console.log(feeds[key][0])
-                page = 1;
-                feedClick(feeds[key][0]["feed"], feedDB);
-            })
+                feedClick(key, feedDB);
+            });
+            if (feedDB[key] === "FEEDBROKE") {
+                feedItem.style.backgroundColor = 'red';
+            }
             feedItem.textContent = key;
             feedItem.setAttribute('data-type', 'feed');
             feedItem.setAttribute('draggable', 'true');
@@ -180,8 +277,37 @@ function collapseListButton(feeds, feedList) {
     });
 }
 
+function flattenFeeds(obj) {
+    const result = {};
+
+    function traverse(current, parentKey = '') {
+        for (const key in current) {
+            if (current.hasOwnProperty(key)) {
+                if (Array.isArray(current[key])) {
+                    current[key].forEach(item => {
+                        if (item.type === 'folder' && item.feeds) {
+                            traverse(item.feeds, parentKey);
+                        } else {
+                            if (!result[parentKey + key]) {
+                                result[parentKey + key] = [];
+                            }
+                            result[parentKey + key].push(item);
+                        }
+                    });
+                } else {
+                    traverse(current[key], key + '.');
+                }
+            }
+        }
+    }
+    traverse(obj);
+    return result;
+}
+
 async function createFeedDB(feedList, feeds) {
     let feedData = {};
+    feeds = flattenFeeds(feeds);
+    console.log("feeds: ", feeds);
     for (let feed of Object.keys(feeds)) {
         const response = await fetch(`http://127.0.0.1:8000/feed/?feed=${feeds[feed][0]["feed"]}&page=1`);
             let fdata = await response.json();
@@ -193,6 +319,7 @@ async function createFeedDB(feedList, feeds) {
     return feedData;
 }
 
+let feedData = {}
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         try {
@@ -220,7 +347,7 @@ onAuthStateChanged(auth, async (user) => {
             }
             const feedList = document.getElementById('feedList');
 
-            const feedData = await createFeedDB(feedList, feeds)
+            feedData = await createFeedDB(feedList, feeds)
             listSpinner.style.display = 'none';
             console.log("feedDB: ",feedData);
             renderFeedsAndFolders(feeds, feedList, feedData);
@@ -424,7 +551,7 @@ async function addFeed() {
             console.log(feeds);
             const feedList = document.getElementById('feedList');
 
-            renderFeedsAndFolders(feeds, feedList);
+            renderFeedsAndFolders(feeds, feedList, feedData);
         }
         loadingSpinner.style.display = 'none';
     } catch (e) {
