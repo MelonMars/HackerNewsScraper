@@ -14,16 +14,14 @@ app.add_middleware(
 @app.get("/checkFeed/")
 async def checkFeed(feedUrl):
     print(feedUrl)
-    paths = ["rss.xml", "feed", ".rss", ".feed", "feed.xml", "rss"]
-    for path in paths:
-        feed = feedparser.parse(urljoin(str(feedUrl), str(path)))
-
-        if not feed.bozo:
-            return {"response": urljoin(str(feedUrl), str(path))}
-
-    feed = feedparser.parse(feedUrl)
-    if not feed.bozo:
-        return {"response": feedUrl}
+    apaths = ["rss.xml", "feed", ".rss", ".feed", "feed.xml", "rss", ""]
+    bpaths = ["https://", "http://", "https://www.", "http://www.", ""]
+    for path in apaths:
+        for bpath in bpaths:
+            print(urljoin(str(bpath)+str(feedUrl), str(path)))
+            feed = feedparser.parse(urljoin(str(bpath)+str(feedUrl), str(path)))
+            if not feed.bozo:
+                return {"response": urljoin(str(bpath)+str(feedUrl), str(path))}
 
     return {"response": "BOZO"}
 

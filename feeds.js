@@ -21,7 +21,9 @@ const linkContainer = document.getElementById("linkContainer");
 const linkTemplate = document.getElementById("linkTemplate");
 const loadingSpinner = document.getElementById('loadingSpinner');
 const scrollDownBtn = document.getElementById("pageDownBtn");
+const inputModal = document.getElementById("customPrompt");
 scrollDownBtn.classList.add("hidden");
+inputModal.classList.add("hidden");
 console.log("Added class!")
 let loading = false;
 let currentFeed = "none";
@@ -233,11 +235,15 @@ onAuthStateChanged(auth, async (user) => {
             document.addEventListener('dragenter', function(event) {
                 if (event.target.nodeName === 'LI' && event.target.getAttribute('data-type') === 'folder') {
                     event.target.style.background = 'lightblue';
+                } else if (event.target.id === 'feedList') {
+                    event.target.style.background = 'lightgreen';
                 }
             });
 
             document.addEventListener('dragleave', function(event) {
                 if (event.target.nodeName === 'LI' && event.target.getAttribute('data-type') === 'folder') {
+                    event.target.style.background = '';
+                } else if (event.target.id === 'feedList') {
                     event.target.style.background = '';
                 }
             });
@@ -258,9 +264,21 @@ onAuthStateChanged(auth, async (user) => {
                     }).catch((error) => {
                         console.error('Error moving feed:', error);
                     });
+                } else if (event.target.id === 'feedList') {
+                    event.target.style.background = '';
+                    const feedName = draggedItem.getAttribute('data-name');
+
+                    console.log(`Dropped ${feedName} into root container`);
+
+                    moveFeedToRoot(user.uid, feedName).then(() => {
+                        const rootContainer = document.getElementById('feedList');
+                        rootContainer.appendChild(draggedItem);
+                        console.log(`Successfully moved ${feedName} into root container`);
+                    }).catch((error) => {
+                        console.error('Error moving feed to root:', error);
+                    });
                 }
             });
-
 
             async function moveFeedToFolder(userId, feedName, folderName) {
                 console.log(`Moving feed ${feedName} to folder ${folderName}`);
@@ -287,6 +305,37 @@ onAuthStateChanged(auth, async (user) => {
                 }
             }
 
+            async function moveFeedToRoot(userId, feedName) {
+                console.log(`Moving feed ${feedName} to root`);
+
+                const userRef = doc(db, 'userData', userId);
+                const userSnapshot = await getDoc(userRef);
+                const userData = userSnapshot.data();
+                console.log('Current user data:', userData);
+
+                // Find the folder containing the feed
+                let feedData = null;
+                for (let folderName in userData.feeds) {
+                    const folder = userData.feeds[folderName][0];
+                    if (folder.feeds && folder.feeds[feedName]) {
+                        feedData = folder.feeds[feedName];
+                        delete folder.feeds[feedName];
+                        console.log(`Feed ${feedName} found and removed from folder ${folderName}`);
+                        break;
+                    }
+                }
+
+                if (feedData) {
+                    userData.feeds[feedName] = feedData;
+                    console.log('User data after moving to root:', userData);
+                    await setDoc(userRef, userData);
+                    console.log('Firestore updated successfully');
+                } else {
+                    console.log(`Feed ${feedName} not found in any folder`);
+                }
+            }
+
+
 
         } catch (e) {
             console.error(e);
@@ -296,44 +345,78 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-function contentAdd() {
+document.addEventListener('DOMContentLoaded', (event) => {
     const widget = document.getElementById("feedAddWidget");
-    console.log("Feed adding");
-    widget.classList.toggle("show");
-    let ignoreClick = true;
+    let ignoreClick = false;
+
     document.addEventListener('click', function(event) {
-        if (widget.classList.contains('show')) {
-            if (!widget.contains(event.target) && event.target.id !== 'feedAddWidget' && !ignoreClick) {
-                widget.classList.remove('show');
-            }
+        if (widget.classList.contains('show') && !widget.contains(event.target) && event.target.id !== 'feedAddWidget' && !ignoreClick) {
+            widget.classList.remove('show');
         }
         ignoreClick = false;
     });
-}
+
+    document.getElementById('addContentBtn').addEventListener('click', function() {
+        console.log("Feed adding");
+        widget.classList.toggle("show");
+        ignoreClick = true;
+    });
+});
 
 
 async function addFeed() {
-    const feedTitle = prompt("Enter a feed title");
-    let feedUrl = prompt("Enter a feed url");
+    const closeButton = document.getElementById("closeCustomPrompt");
 
-    console.log("http://127.0.0.1:8000/checkFeed/?feedUrl=" + feedUrl);
-    const response = await fetch("http://127.0.0.1:8000/checkFeed/?feedUrl=" + feedUrl);
-    let feed = await response.json();
-    console.log(feedUrl);
-    if (feed.response === "BOZO") {
-        alert("INVALID FEED URL");
-    } else {
-        feedUrl = feed.response;
-        const dataSnapshot = await getDoc(doc(db, 'userData', auth.currentUser.uid));
-        const updates = {}
-        updates[`feeds.${feedTitle}`] = [{feed: feedUrl, type: "feed"}];
-        updateDoc(dataSnapshot.ref, updates)
-        const data = dataSnapshot.data();
-        const feeds = data.feeds;
-        console.log(feeds)
-        const feedList = document.getElementById('feedList');
+    function getInput(prompt) {
+        inputModal.classList.remove('hidden');
+        return new Promise((resolve, reject) => {
 
-        renderFeedsAndFolders(feeds, feedList);
+            function handleInput() {
+                const inputValue = document.getElementById("promptInput").value;
+                document.getElementById("promptInputSubmit").removeEventListener('click', handleInput);
+                document.getElementById("promptInputLabel").innerText = prompt
+                closeButton.removeEventListener('click', handleClose);
+                resolve(inputValue);
+            }
+
+            function handleClose() {
+                document.getElementById("promptInputSubmit").removeEventListener('click', handleInput);
+                closeButton.removeEventListener('click', handleClose);
+                inputModal.classList.add('hidden');
+                reject(new Error("Modal closed"));
+            }
+
+            document.getElementById("promptInputSubmit").addEventListener('click', handleInput);
+            closeButton.addEventListener('click', handleClose);
+        });
+    }
+
+    try {
+        const feedTitle = await getInput("Enter feed name:");
+        const feedUrl = await getInput("Enter feed url:");
+        inputModal.classList.add('hidden');
+
+        console.log("http://127.0.0.1:8000/checkFeed/?feedUrl=" + feedUrl);
+        const response = await fetch("http://127.0.0.1:8000/checkFeed/?feedUrl=" + feedUrl);
+        const feed = await response.json();
+        console.log(feedUrl);
+        if (feed.response === "BOZO") {
+            alert("INVALID FEED URL");
+        } else {
+            const validFeedUrl = feed.response;
+            const dataSnapshot = await getDoc(doc(db, 'userData', auth.currentUser.uid));
+            const updates = {};
+            updates[`feeds.${feedTitle}`] = [{feed: validFeedUrl, type: "feed"}];
+            await updateDoc(dataSnapshot.ref, updates);
+            const data = dataSnapshot.data();
+            const feeds = data.feeds;
+            console.log(feeds);
+            const feedList = document.getElementById('feedList');
+
+            renderFeedsAndFolders(feeds, feedList);
+        }
+    } catch (e) {
+        console.log(e);
     }
 }
 
@@ -359,7 +442,6 @@ function scrollDown() {
     feedClick(currentFeed, page, true);
 }
 
-window.contentAdd = contentAdd;
 window.addFeed = addFeed;
 window.addFolder = addFolder;
 window.scrollDown = scrollDown;

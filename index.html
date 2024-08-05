@@ -25,7 +25,7 @@
             </ul>
         </div>
         <button id="listToggleBtn">Collapse Feeds</button>
-        <button id="addContentBtn" onclick="contentAdd()">➕</button>
+        <button id="addContentBtn">➕</button>
         <div class="widget-container">
             <div class="expandable-widget" id="feedAddWidget">
                 <div class="widget-title">Add a:</div>
@@ -33,6 +33,14 @@
                 <div class="widget-choice" onClick="addFolder()">Folder</div>
                 <div class="widget-choice">AI Topic</div>
             </div>
+        </div>
+    </div>
+    <div id="customPrompt" class="modal">
+        <div class="modalContent">
+            <span class="modalClose" id="closeCustomPrompt">x</span>
+            <p></p>
+            <label for="promptInput" id="promptInputLabel"></label><input type="text" id="promptInput"/>
+            <button id="promptInputSubmit">Submit Input</button>
         </div>
     </div>
     <template id="linkTemplate">
