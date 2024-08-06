@@ -309,10 +309,14 @@ async function createFeedDB(feedList, feeds) {
     feeds = flattenFeeds(feeds);
     console.log("feeds: ", feeds);
     for (let feed of Object.keys(feeds)) {
-        const response = await fetch(`http://127.0.0.1:8000/feed/?feed=${feeds[feed][0]["feed"]}&page=1`);
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/feed/?feed=${feeds[feed][0]["feed"]}&page=1`);
             let fdata = await response.json();
             feedData[feed] = fdata.response;
             console.log(`feedData ${feed}: `,feedData[feed])
+        } catch (e) {
+            alert("Unable to fetch (in createFeedDB)")
+        }
     }
 
     console.log("feedData: ", feedData);
