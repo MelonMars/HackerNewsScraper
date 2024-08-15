@@ -1,14 +1,8 @@
 import React, {useState} from 'react';
-import {StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {Alert, StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import {auth,googleProvider} from "../firebase";
-//import { GoogleSignin } from '@react-native-google-signin/google-signin';
-
-/*GoogleSignin.configure({
-    webClientId: '99431625311-687254gqjdo95mup6apcasmfaudtatoh.apps.googleusercontent.com',
-});
-*/
 
 
 export function LoginScreen({navigation}) {
@@ -23,21 +17,10 @@ export function LoginScreen({navigation}) {
                 );
             } catch (e) {
                 console.log("handleSubmit error: ", e.message);
+                Alert.alert("Wrong username or password! Or possibly you used something else to log in with?")
             }
         }
     }
-
-    const signInWithGoogle = async () => {
-        try {
-            /*const { idToken } = await GoogleSignin.signIn();
-            const googleCredential = googleProvider.credential(idToken);
-            await auth.signInWithCredential(googleCredential);
-            */
-            console.log("Sign in with google");
-        } catch (err){
-            console.error(err);
-        }
-    };
 
     return(<View style={styles.container}>
         <TextInput
@@ -52,9 +35,6 @@ export function LoginScreen({navigation}) {
         />
         <TouchableOpacity onPress={handleSubmit}>
             <Text>Log in</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={signInWithGoogle}>
-            <Text>Log in with Google</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
             <Text>Go to Signup</Text>
