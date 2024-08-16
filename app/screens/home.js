@@ -17,7 +17,8 @@ export default function HomeScreen() {
     const [loading, setLoading] = useState(false);
     const addButtonRef = useRef(null);
     const [inputResolver, setInputResolver] = useState(null);
-
+    const [fetchingFeed, setFetchingFeed] = useState(false);
+    
     useEffect(() => {
         const user = auth.currentUser;
         if (user) setUserId(user.uid);
@@ -68,6 +69,7 @@ export default function HomeScreen() {
 
     const addFeed = async () => {
         console.log("ADDFEED");
+        setLoading(true);
         try {
             const feedTitle = await showInputModal("Enter feed name:");
             console.log("Feed Title:", feedTitle);
