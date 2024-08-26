@@ -5,10 +5,11 @@ Currently, it features a Server based (hoping to eventually become serverless) b
 It also uses Google Firebase for the DB, both for feed storage, folder storage, and for authentication purposes.
 
 TODO Frontend:
+
 	- Get invalid modal and feed adding modal working in App
 	- Add feed list display in App
 	- Add add folder and feed in App
-	- Add settings page in App
+ 	- Add settings page in App
 	- Add drag and drop for folders in App
 	- Add reading feeds and folders in App
 	- Make folders fold down in App
@@ -18,17 +19,18 @@ TODO Frontend:
 	- Make website feed url modal cleared after stuff is inputted
 
 TODO Backend:
-	- Add AI generated feeds from websites
+
+ 	- Add AI generated feeds from websites
 	- Make docker and serverless and run from Google
 	- Make AI generated exams
 
 
 
 ## Demo of the browser version
-![Web demo](WebDemo.webm)
+![[Web demo](https://www.youtube.com/watch?v=ML2GIfpMsqs)
 
 ## Demo of the mobile version
-![Mobile demo](MobileDemo.mp4)
+![Mobile demo](https://www.youtube.com/watch?v=ag2VDNotW9k)
 
 ### To run:
 You gotta go to the backend, and then go `uvicorn api:app --host 0.0.0.0 --reload`. Then for the website you run it through JetBrains webstorm (at least that's how I've been doing it)
