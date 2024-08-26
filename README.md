@@ -27,7 +27,7 @@ TODO Backend:
 
 
 ## Demo of the browser version
-![[Web demo](https://cloud-nxhxe0zhe-hack-club-bot.vercel.app/0screenshot_2024-08-25_224350.png)](https://www.youtube.com/watch?v=ML2GIfpMsqs)
+[![Web demo](https://cloud-nxhxe0zhe-hack-club-bot.vercel.app/0screenshot_2024-08-25_224350.png)](https://www.youtube.com/watch?v=ML2GIfpMsqs)
 
 ## Demo of the mobile version
 [Mobile demo](https://www.youtube.com/shorts/ag2VDNotW9k)
