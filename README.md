@@ -27,10 +27,10 @@ TODO Backend:
 
 
 ## Demo of the browser version
-![[Web demo](https://www.youtube.com/watch?v=ML2GIfpMsqs)
+![[Web demo](https://cloud-nxhxe0zhe-hack-club-bot.vercel.app/0screenshot_2024-08-25_224350.png)](https://www.youtube.com/watch?v=ML2GIfpMsqs)
 
 ## Demo of the mobile version
-![Mobile demo](https://www.youtube.com/watch?v=ag2VDNotW9k)
+[Mobile demo](https://www.youtube.com/shorts/ag2VDNotW9k)
 
 ### To run:
 You gotta go to the backend, and then go `uvicorn api:app --host 0.0.0.0 --reload`. Then for the website you run it through JetBrains webstorm (at least that's how I've been doing it)
