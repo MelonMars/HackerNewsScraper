@@ -50,7 +50,6 @@ onAuthStateChanged(auth, (user) => {
         googleLogin.addEventListener('click', function(){
             signInWithPopup(auth, googleProvider)
                 .then(async (result) => {
-                    const credential = GoogleAuthProvider.credentialFromResult(result);
                     const user = result.user;
                     const userId = user.uid;
 
@@ -86,8 +85,25 @@ onAuthStateChanged(auth, (user) => {
             const password = document.getElementById("passwordInput").value;
             if (isSignUpMode) {
                 createUserWithEmailAndPassword(auth, email, password)
-                    .then((userCredential) => {
+                    .then(async (userCredential) => {
                         const user = userCredential.user;
+                        const userID = user.uid;
+
+                        const docRef = doc(db, "userData", userID);
+                        const docSnap = await getDoc(docRef);
+
+                        if (!docSnap.exists()) {
+                            try {
+                                await setDoc(docRef, {
+                                    name: user.displayName,
+                                    feeds: []
+                                })
+                            } catch (e) {
+                                console.log("Error creating document", e)
+                            }
+                        } else {
+                            console.log("User already exists, just logging in again!");
+                        }
                         console.log("Signed up as: ", user);
                     })
                     .catch((err) => {
@@ -95,9 +111,28 @@ onAuthStateChanged(auth, (user) => {
                     });
             } else {
                 signInWithEmailAndPassword(auth, email, password)
-                    .then((userCredential) => {
+                    .then(async (userCredential) => {
                         const user = userCredential.user;
-                        console.log("Signed in as: ", user);
+                        const userID = user.uid;
+
+                        const docRef = doc(db, "userData", userID);
+                        console.log("Got docref, getting docsnap");
+                        const docSnap = await getDoc(docRef);
+
+                        if (!docSnap.exists()) {
+                            console.log("Need to make new user");
+                            try {
+                                await setDoc(docRef, {
+                                    name: user.displayName,
+                                    feeds: []
+                                })
+                            } catch (e) {
+                                console.log("Error creating document", e)
+                            }
+                        } else {
+                            console.log("User already exists, just logging in again!");
+                        }
+                        console.log("Signed up as: ", user);
                     })
                     .catch((err) => {
                         console.error(err);

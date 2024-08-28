@@ -1,3 +1,4 @@
+import time
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import feedparser
@@ -18,11 +19,12 @@ async def checkFeed(feedUrl):
     bpaths = ["https://", "http://", "https://www.", "http://www.", ""]
     for path in apaths:
         for bpath in bpaths:
-            print(urljoin(str(bpath)+str(feedUrl), str(path)))
+            url = urljoin(str(bpath)+str(feedUrl), str(path))
+            print(url)
             feed = feedparser.parse(urljoin(str(bpath)+str(feedUrl), str(path)))
             if not feed.bozo:
                 return {"response": urljoin(str(bpath)+str(feedUrl), str(path))}
-
+            time.sleep(0.1)
     return {"response": "BOZO"}
 
 

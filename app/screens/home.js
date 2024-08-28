@@ -1,11 +1,19 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
-    View, Text, TouchableOpacity, Modal, TextInput, Button,
-    TouchableWithoutFeedback, ActivityIndicator, StyleSheet
+    ActivityIndicator,
+    Button,
+    FlatList,
+    Modal,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
 import {auth, db} from '../firebase'; // Assuming you're importing these from your firebase setup
-import { signOut } from 'firebase/auth';
-import { getDoc, doc, updateDoc } from 'firebase/firestore';
+import {signOut} from 'firebase/auth';
+import {doc, getDoc, updateDoc} from 'firebase/firestore';
 
 export default function HomeScreen() {
     const [userId, setUserId] = useState(null);
@@ -17,8 +25,9 @@ export default function HomeScreen() {
     const [loading, setLoading] = useState(false);
     const addButtonRef = useRef(null);
     const [inputResolver, setInputResolver] = useState(null);
-    const [fetchingFeed, setFetchingFeed] = useState(false);
-    
+    const [feeds, setFeeds] = useState([]);
+    const [dataFeeds, setDataFeeds] = useState([]);
+
     useEffect(() => {
         const user = auth.currentUser;
         if (user) setUserId(user.uid);
@@ -74,19 +83,19 @@ export default function HomeScreen() {
             const feedTitle = await showInputModal("Enter feed name:");
             console.log("Feed Title:", feedTitle);
 
-            const feedUrl = await showInputModal("Enter feed url:");
+            let feedUrl = await showInputModal("Enter feed url:");
             console.log("Feed URL:", feedUrl);
-
-            const response = await fetch("http://192.168.1.176:8000/checkFeed/?feedUrl=" + feedUrl);
+            feedUrl = feedUrl.replace(" ", "");
+            const response = await fetch("http://192.168.56.1:8000/checkFeed/?feedUrl=" + feedUrl);
             const feed = await response.json();
 
-            alert(feed.response);
             console.log(feed.response);
 
 
             if (feed.response === "BOZO") {
                 alert("INVALID FEED URL");
             } else {
+                alert("Found feed, adding!");
                 const validFeedUrl = feed.response;
                 const dataSnapshot = await getDoc(doc(db, 'userData', userId));
                 const updates = {};
@@ -99,7 +108,70 @@ export default function HomeScreen() {
         } catch (e) {
             console.log(e);
         }
+        setLoading(false);
     };
+
+    const addFolder = async () => {
+        console.log("ADDFOLDER");
+        setLoading(true);
+        try {
+            const folderName = await showInputModal("Enter folder name:");
+            console.log("Folder name:", folderName);
+
+            const dataSnapshot = await getDoc(doc(db, 'userData', userId));
+            const updates = {};
+            updates[`feeds.${folderName}`] = [{ feeds: {}, type: "folder" }];
+            await updateDoc(dataSnapshot.ref, updates);
+            alert("Added folder: " + folderName);
+        } catch (e) {
+            console.log(e);
+        }
+        setLoading(false);
+    }
+
+    const feedItem = ({ item }) => (
+        <TouchableOpacity
+            onPress={() => {
+                if ('feed' in dataFeeds[item][0]) {
+                    alert(dataFeeds[item][0].feed)
+                } else {
+                    alert(dataFeeds[item][0].feeds)
+                }}}
+            >
+            <Text>{item}</Text>
+        </TouchableOpacity>
+    )
+
+    useEffect(() => {
+        const fetchFeeds = async () => {
+            console.log(db);
+            console.log(auth.currentUser.uid);
+            try {
+                const dataSnapshot = await getDoc(doc(db, 'userData', auth.currentUser.uid));
+                if (dataSnapshot.exists()) {
+                    console.log("Datasnapshot: ", dataSnapshot.data());
+                } else {
+                    console.log("No such document!");
+                }
+            } catch (err) {
+                console.log("Error in dataSnap: " + err);
+            }
+            try {
+                const dataSnapshot = await getDoc(doc(db, 'userData', auth.currentUser.uid));
+                const feedsData = dataSnapshot.exists() ? dataSnapshot.data().feeds : {};
+                setDataFeeds(feedsData);
+                console.log(feedsData);
+                setFeeds(Object.keys(feedsData));
+            } catch (error) {
+                console.error("Error fetching feeds: ", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchFeeds();
+    }, []);
+
 
     return (
         <View style={styles.container}>
@@ -111,6 +183,11 @@ export default function HomeScreen() {
             <TouchableOpacity ref={addButtonRef} onPress={handleAddItem}>
                 <Text>+</Text>
             </TouchableOpacity>
+            <FlatList
+                data={feeds}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={feedItem}
+            />
             <Modal
                 visible={addItemVisible}
                 transparent={true}
@@ -125,7 +202,7 @@ export default function HomeScreen() {
                                 <TouchableOpacity onPress={addFeed}>
                                     <Text>Add Feed</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity onPress={() => {}}>
+                                <TouchableOpacity onPress={addFolder}>
                                     <Text>Add Folder</Text>
                                 </TouchableOpacity>
                             </View>
