@@ -11,10 +11,11 @@ import {
     TouchableWithoutFeedback,
     View
 } from 'react-native';
-import {auth, db} from '../firebase'; // Assuming you're importing these from your firebase setup
+import {auth, db} from '../firebase';
 import {signOut} from 'firebase/auth';
 import {doc, getDoc, updateDoc} from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
+import DraggableFlatList from 'react-native-draggable-flatlist';
 
 export default function HomeScreen() {
     const [userId, setUserId] = useState(null);
@@ -29,6 +30,7 @@ export default function HomeScreen() {
     const [feeds, setFeeds] = useState([]);
     const [dataFeeds, setDataFeeds] = useState([]);
     const navigation = useNavigation();
+    const [expandedFolders, setExpandedFolders] = useState({});
 
     useEffect(() => {
         const user = auth.currentUser;
@@ -73,10 +75,40 @@ export default function HomeScreen() {
     const handleInputSubmit = () => {
         if (inputResolver) {
             inputResolver(inputValue);
-            setInputValue(''); // Clear input for next use
+            setInputValue('');
             setInputVisible(false);
         }
     };
+
+    const fetchFeeds = async () => {
+        console.log(db);
+        console.log(auth.currentUser.uid);
+        try {
+            const dataSnapshot = await getDoc(doc(db, 'userData', auth.currentUser.uid));
+            if (dataSnapshot.exists()) {
+                console.log("Datasnapshot: ", dataSnapshot.data());
+            } else {
+                console.log("No such document!");
+            }
+        } catch (err) {
+            console.log("Error in dataSnap: " + err);
+        }
+        try {
+            const dataSnapshot = await getDoc(doc(db, 'userData', auth.currentUser.uid));
+            const feedsData = dataSnapshot.exists() ? dataSnapshot.data().feeds : {};
+            setDataFeeds(feedsData);
+            console.log(feedsData);
+            setFeeds(Object.keys(feedsData));
+        } catch (error) {
+            console.error("Error fetching feeds: ", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchFeeds();
+    }, []);
 
     const addFeed = async () => {
         console.log("ADDFEED");
@@ -106,6 +138,7 @@ export default function HomeScreen() {
                 const data = dataSnapshot.data();
                 const feeds = data.feeds;
                 console.log(feeds);
+                await fetchFeeds();
             }
         } catch (e) {
             console.log(e);
@@ -143,51 +176,62 @@ export default function HomeScreen() {
         }
     }
 
-    const feedItem = ({ item }) => (
+    const handleFolderPress = (item) => {
+        setExpandedFolders((prev) => ({
+            ...prev,
+            [item]: !prev[item],
+        }));
+    };
+
+    const handleDrop = (from, to, data) => {
+        console.log('DataFeeds before drop:', dataFeeds);
+        console.log(from);
+        console.log(to);
+        console.log("Data:", data);
+        console.log('From item:', dataFeeds[data[from]]);
+        console.log('To item:', dataFeeds[data[to]]);
+        let newDataFeeds = { ...dataFeeds };
+
+        const fromItem = newDataFeeds[data[from]];
+        const toItem = newDataFeeds[data[to]];
+
+        if (toItem && toItem.feeds) {
+            toItem.feeds.push(fromItem);
+        }
+
+        delete newDataFeeds[data[from]];
+
+        setDataFeeds(newDataFeeds);
+        console.log("new data feeds: ", newDataFeeds);
+        console.log("DataFeeds after drop:", dataFeeds);
+    };
+
+
+    const FeedItem = ({ item, drag, isActive }) => (
         <TouchableOpacity
+            onLongPress={drag}
             onPress={() => {
                 if ('feed' in dataFeeds[item][0]) {
                     fetchFeed(dataFeeds[item][0].feed);
-                } else {
-                    alert('Feeds ' + dataFeeds[item][0].feeds);
+                } else if ('feeds' in dataFeeds[item][0]) {
+                    handleFolderPress(item);
                 }
+            }}
+            style={{
+                backgroundColor: isActive ? 'lightgray' : 'white',
+                padding: 10,
             }}
         >
             <Text>{item}</Text>
+            {/* Render feeds */}
+            {expandedFolders[item] &&
+                dataFeeds[item][0].feeds.map((feed, index) => (
+                    <Text key={index} style={{ paddingLeft: 20 }}>
+                        {feed}
+                    </Text>
+                ))}
         </TouchableOpacity>
     );
-
-
-    useEffect(() => {
-        const fetchFeeds = async () => {
-            console.log(db);
-            console.log(auth.currentUser.uid);
-            try {
-                const dataSnapshot = await getDoc(doc(db, 'userData', auth.currentUser.uid));
-                if (dataSnapshot.exists()) {
-                    console.log("Datasnapshot: ", dataSnapshot.data());
-                } else {
-                    console.log("No such document!");
-                }
-            } catch (err) {
-                console.log("Error in dataSnap: " + err);
-            }
-            try {
-                const dataSnapshot = await getDoc(doc(db, 'userData', auth.currentUser.uid));
-                const feedsData = dataSnapshot.exists() ? dataSnapshot.data().feeds : {};
-                setDataFeeds(feedsData);
-                console.log(feedsData);
-                setFeeds(Object.keys(feedsData));
-            } catch (error) {
-                console.error("Error fetching feeds: ", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchFeeds();
-    }, []);
-
 
     return (
         <View style={styles.container}>
@@ -199,11 +243,15 @@ export default function HomeScreen() {
             <TouchableOpacity ref={addButtonRef} onPress={handleAddItem}>
                 <Text>+</Text>
             </TouchableOpacity>
-            <FlatList
-                data={feeds}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={feedItem}
+            <DraggableFlatList
+                data={Object.keys(dataFeeds)}
+                renderItem={({ item, drag, isActive }) => (
+                    <FeedItem item={item} drag={drag} isActive={isActive} />
+                )}
+                keyExtractor={(item) => item}
+                onDragEnd={({ data, from, to }) => handleDrop(from, to, data)}
             />
+
             <Modal
                 visible={addItemVisible}
                 transparent={true}
