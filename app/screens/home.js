@@ -14,6 +14,7 @@ import {
 import {auth, db} from '../firebase'; // Assuming you're importing these from your firebase setup
 import {signOut} from 'firebase/auth';
 import {doc, getDoc, updateDoc} from 'firebase/firestore';
+import { useNavigation } from '@react-navigation/native';
 
 export default function HomeScreen() {
     const [userId, setUserId] = useState(null);
@@ -27,6 +28,7 @@ export default function HomeScreen() {
     const [inputResolver, setInputResolver] = useState(null);
     const [feeds, setFeeds] = useState([]);
     const [dataFeeds, setDataFeeds] = useState([]);
+    const navigation = useNavigation();
 
     useEffect(() => {
         const user = auth.currentUser;
@@ -129,18 +131,32 @@ export default function HomeScreen() {
         setLoading(false);
     }
 
+    const fetchFeed = async (url) => {
+        try {
+            const response = await fetch("http://192.168.56.1:8000/feed?feed="+url);
+            console.log(url)
+            const feedData = await response.json();
+            navigation.navigate('Feed', { feedData });
+            console.log(feedData);
+        } catch (e) {
+            alert("Unable to fetch (in createFeedDB): " + e);
+        }
+    }
+
     const feedItem = ({ item }) => (
         <TouchableOpacity
             onPress={() => {
                 if ('feed' in dataFeeds[item][0]) {
-                    alert(dataFeeds[item][0].feed)
+                    fetchFeed(dataFeeds[item][0].feed);
                 } else {
-                    alert(dataFeeds[item][0].feeds)
-                }}}
-            >
+                    alert('Feeds ' + dataFeeds[item][0].feeds);
+                }
+            }}
+        >
             <Text>{item}</Text>
         </TouchableOpacity>
-    )
+    );
+
 
     useEffect(() => {
         const fetchFeeds = async () => {

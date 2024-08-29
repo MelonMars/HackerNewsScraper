@@ -4,6 +4,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from './screens/home';
 import { LoginScreen, SignupScreen } from './screens/auth';
 import useAuth from "./hooks/useAuth";
+import FeedScreen from './screens/feedView';
+import FeedPage from "./screens/feedScreen";
 
 const Stack = createStackNavigator();
 
@@ -21,6 +23,8 @@ export default function App() {
                         <Stack.Screen name="Signup" component={SignupScreen} />
                     </>
                 )}
+                <Stack.Screen name="Feed" component={FeedScreen} />
+                <Stack.Screen name="FeedPage" component={FeedPage} />
             </Stack.Navigator>
         </NavigationContainer>
     );
