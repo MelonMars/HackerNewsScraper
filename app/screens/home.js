@@ -9,13 +9,12 @@ import {
     TextInput,
     TouchableOpacity,
     TouchableWithoutFeedback,
-    View
+    View, PanResponder, Animated
 } from 'react-native';
 import {auth, db} from '../firebase';
 import {signOut} from 'firebase/auth';
 import {doc, getDoc, updateDoc} from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
-import DraggableFlatList from 'react-native-draggable-flatlist';
 
 export default function HomeScreen() {
     const [userId, setUserId] = useState(null);
@@ -176,62 +175,53 @@ export default function HomeScreen() {
         }
     }
 
-    const handleFolderPress = (item) => {
-        setExpandedFolders((prev) => ({
-            ...prev,
-            [item]: !prev[item],
-        }));
+    const FeedItem = ({ item, onDrop }) => {
+        const pan = useRef(new Animated.ValueXY()).current;
+        const [isDragging, setIsDragging] = useState(false);
+
+        const panResponder = useRef(
+            PanResponder.create({
+                onStartShouldSetPanResponder: () => true,
+                onPanResponderGrant: () => {
+                    setIsDragging(true);
+                },
+                onPanResponderMove: Animated.event(
+                    [null, { dx: pan.x, dy: pan.y }],
+                    { useNativeDriver: false }
+                ),
+                onPanResponderRelease: (e, gestureState) => {
+                    setIsDragging(false);
+                    onDrop(item, gestureState.moveX, gestureState.moveY);
+                    Animated.spring(pan, {
+                        toValue: { x: 0, y: 0 },
+                        useNativeDriver: false
+                    }).start();
+                },
+            })
+        ).current;
+
+        return (
+            <Animated.View
+                style={[pan.getLayout(), isDragging && { zIndex: 1 }]}
+                {...panResponder.panHandlers}
+            >
+                <View>
+                    <Text>{item}</Text>
+                </View>
+            </Animated.View>
+        );
     };
 
-    const handleDrop = (from, to, data) => {
-        console.log('DataFeeds before drop:', dataFeeds);
-        console.log(from);
-        console.log(to);
-        console.log("Data:", data);
-        console.log('From item:', dataFeeds[data[from]]);
-        console.log('To item:', dataFeeds[data[to]]);
-        let newDataFeeds = { ...dataFeeds };
 
-        const fromItem = newDataFeeds[data[from]];
-        const toItem = newDataFeeds[data[to]];
-
-        if (toItem && toItem.feeds) {
-            toItem.feeds.push(fromItem);
-        }
-
-        delete newDataFeeds[data[from]];
-
-        setDataFeeds(newDataFeeds);
-        console.log("new data feeds: ", newDataFeeds);
-        console.log("DataFeeds after drop:", dataFeeds);
+    const handleDrop = (draggedItem, x, y) => {
+        feeds.forEach((item) => {
+            if ('feeds' in dataFeeds[item][0]) {
+                //Check if x and y of folder are overlapping with x and y of item being dropped, and if so, drop item into folder.
+            }
+        });
+        console.log(draggedItem);
+        console.log(dataFeeds[draggedItem]);
     };
-
-
-    const FeedItem = ({ item, drag, isActive }) => (
-        <TouchableOpacity
-            onLongPress={drag}
-            onPress={() => {
-                if ('feed' in dataFeeds[item][0]) {
-                    fetchFeed(dataFeeds[item][0].feed);
-                } else if ('feeds' in dataFeeds[item][0]) {
-                    handleFolderPress(item);
-                }
-            }}
-            style={{
-                backgroundColor: isActive ? 'lightgray' : 'white',
-                padding: 10,
-            }}
-        >
-            <Text>{item}</Text>
-            {/* Render feeds */}
-            {expandedFolders[item] &&
-                dataFeeds[item][0].feeds.map((feed, index) => (
-                    <Text key={index} style={{ paddingLeft: 20 }}>
-                        {feed}
-                    </Text>
-                ))}
-        </TouchableOpacity>
-    );
 
     return (
         <View style={styles.container}>
@@ -243,15 +233,13 @@ export default function HomeScreen() {
             <TouchableOpacity ref={addButtonRef} onPress={handleAddItem}>
                 <Text>+</Text>
             </TouchableOpacity>
-            <DraggableFlatList
-                data={Object.keys(dataFeeds)}
-                renderItem={({ item, drag, isActive }) => (
-                    <FeedItem item={item} drag={drag} isActive={isActive} />
+            <FlatList
+                data={feeds}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({ item }) => (
+                    <FeedItem item={item} onDrop={handleDrop} />
                 )}
-                keyExtractor={(item) => item}
-                onDragEnd={({ data, from, to }) => handleDrop(from, to, data)}
             />
-
             <Modal
                 visible={addItemVisible}
                 transparent={true}
