@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState, useLayoutEffect } from 'react';
 import {
     ActivityIndicator,
     Button,
@@ -29,7 +29,7 @@ export default function HomeScreen() {
     const [feeds, setFeeds] = useState([]);
     const [dataFeeds, setDataFeeds] = useState([]);
     const navigation = useNavigation();
-    const [expandedFolders, setExpandedFolders] = useState({});
+    const [itemPositions, setItemPositions] = useState({});
 
     useEffect(() => {
         const user = auth.currentUser;
@@ -178,6 +178,28 @@ export default function HomeScreen() {
     const FeedItem = ({ item, onDrop }) => {
         const pan = useRef(new Animated.ValueXY()).current;
         const [isDragging, setIsDragging] = useState(false);
+        const selfRef = useRef(null);
+        const [hasMeasured, setHasMeasured] = useState(false);
+
+        useEffect(() => {
+            if (selfRef.current && !hasMeasured) {
+                const measureAndSetPosition = () => {
+                    selfRef.current.measure((x, y, width, height, pageX, pageY) => {
+                        console.log('Initial position for', item, ":", { x: pageX, y: pageY });
+                        setItemPositions(prevPositions => ({
+                            ...prevPositions,
+                            [item]: { x: pageX, y: pageY }
+                        }));
+                        setHasMeasured(true);
+                    });
+                };
+
+                measureAndSetPosition();
+            }
+        }, [selfRef.current, item, hasMeasured]);
+
+
+
 
         const panResponder = useRef(
             PanResponder.create({
@@ -204,6 +226,7 @@ export default function HomeScreen() {
             <Animated.View
                 style={[pan.getLayout(), isDragging && { zIndex: 1 }]}
                 {...panResponder.panHandlers}
+                ref={selfRef}
             >
                 <View>
                     <Text>{item}</Text>
@@ -212,16 +235,33 @@ export default function HomeScreen() {
         );
     };
 
-
     const handleDrop = (draggedItem, x, y) => {
-        feeds.forEach((item) => {
+        const delta = 20;
+        console.log(itemPositions);
+        Object.entries(itemPositions).forEach(([item, { x: itemX, y: itemY, width, height }]) => {
+            console.log(item, itemX, itemY);
             if ('feeds' in dataFeeds[item][0]) {
-                //Check if x and y of folder are overlapping with x and y of item being dropped, and if so, drop item into folder.
+                if (
+                    x >= itemX &&
+                    x <= itemX + delta &&
+                    y >= itemY &&
+                    y <= itemY + delta
+                ) {
+                    console.log(`Item ${draggedItem} dropped into ${item}`);
+                }
             }
         });
+
         console.log(draggedItem);
         console.log(dataFeeds[draggedItem]);
+        console.log("Actual X:", x, "Actual Y:", y);
+        setItemPositions(prevPositions => ({
+            ...prevPositions,
+            [draggedItem]: { x, y }
+        }));
+        console.log("Item pos X:", x, "Item pos Y:", y);
     };
+
 
     return (
         <View style={styles.container}>
@@ -237,7 +277,10 @@ export default function HomeScreen() {
                 data={feeds}
                 keyExtractor={(item, index) => index.toString()}
                 renderItem={({ item }) => (
-                    <FeedItem item={item} onDrop={handleDrop} />
+                    <FeedItem
+                        item={item}
+                        onDrop={handleDrop}
+                    />
                 )}
             />
             <Modal
