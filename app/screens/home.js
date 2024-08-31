@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState, useLayoutEffect } from 'react';
+import React, {useEffect, useRef, useState, useCallback } from 'react';
 import {
     ActivityIndicator,
     Button,
@@ -29,7 +29,7 @@ export default function HomeScreen() {
     const [feeds, setFeeds] = useState([]);
     const [dataFeeds, setDataFeeds] = useState([]);
     const navigation = useNavigation();
-    const [itemPositions, setItemPositions] = useState({});
+    const itemPositionsRef = useRef({});
 
     useEffect(() => {
         const user = auth.currentUser;
@@ -176,30 +176,36 @@ export default function HomeScreen() {
     }
 
     const FeedItem = ({ item, onDrop }) => {
+        console.log("Instantiated");
         const pan = useRef(new Animated.ValueXY()).current;
         const [isDragging, setIsDragging] = useState(false);
         const selfRef = useRef(null);
         const [hasMeasured, setHasMeasured] = useState(false);
 
-        useEffect(() => {
-            if (selfRef.current && !hasMeasured) {
-                const measureAndSetPosition = () => {
+        const measureAndSetPosition = useCallback(() => {
+            if (selfRef.current) {
+                setTimeout(() => {
                     selfRef.current.measure((x, y, width, height, pageX, pageY) => {
                         console.log('Initial position for', item, ":", { x: pageX, y: pageY });
-                        setItemPositions(prevPositions => ({
-                            ...prevPositions,
-                            [item]: { x: pageX, y: pageY }
-                        }));
+                        itemPositionsRef.current[item] = { x: pageX, y: pageY, width, height };
                         setHasMeasured(true);
                     });
-                };
+                }, 0);
+            }
+        }, [item]);
 
+        useEffect(() => {
+            if (!hasMeasured) {
                 measureAndSetPosition();
             }
-        }, [selfRef.current, item, hasMeasured]);
+        }, [measureAndSetPosition, hasMeasured]);
 
-
-
+        useEffect(() => {
+            const position = itemPositionsRef.current[item];
+            if (position && !isDragging) {
+                pan.setValue({ x: position.x, y: position.y });
+            }
+        }, [item, isDragging]);
 
         const panResponder = useRef(
             PanResponder.create({
@@ -214,10 +220,6 @@ export default function HomeScreen() {
                 onPanResponderRelease: (e, gestureState) => {
                     setIsDragging(false);
                     onDrop(item, gestureState.moveX, gestureState.moveY);
-                    Animated.spring(pan, {
-                        toValue: { x: 0, y: 0 },
-                        useNativeDriver: false
-                    }).start();
                 },
             })
         ).current;
@@ -235,12 +237,20 @@ export default function HomeScreen() {
         );
     };
 
-    const handleDrop = (draggedItem, x, y) => {
+    /*const handleDrop = (draggedItem, x, y) => {
         const delta = 20;
-        console.log(itemPositions);
-        Object.entries(itemPositions).forEach(([item, { x: itemX, y: itemY, width, height }]) => {
+        const positions = itemPositionsRef.current;
+
+        console.log(positions);
+        Object.entries(positions).forEach(([item, { x: itemX, y: itemY, width, height }]) => {
+            console.log("Item", item, ": X:", itemX, "Y:", itemY);
+        });
+
+        console.log(positions);
+        Object.entries(positions).forEach(([item, { x: itemX, y: itemY, width, height }]) => {
             console.log(item, itemX, itemY);
             if ('feeds' in dataFeeds[item][0]) {
+                console.log("Folder!");
                 if (
                     x >= itemX &&
                     x <= itemX + delta &&
@@ -255,13 +265,41 @@ export default function HomeScreen() {
         console.log(draggedItem);
         console.log(dataFeeds[draggedItem]);
         console.log("Actual X:", x, "Actual Y:", y);
-        setItemPositions(prevPositions => ({
-            ...prevPositions,
-            [draggedItem]: { x, y }
-        }));
-        console.log("Item pos X:", x, "Item pos Y:", y);
-    };
 
+        itemPositionsRef.current[draggedItem] = { x, y };
+
+        console.log("Item pos X:", x, "Item pos Y:", y);
+    };*/
+
+    const handleDrop = (draggedItem, x, y) => {
+        const positions = itemPositionsRef.current;
+        const delta = 20; // Adjust as necessary
+
+        itemPositionsRef.current[draggedItem] = { x, y };
+
+        Object.entries(positions).forEach(([item, { x: itemX, y: itemY }]) => {
+            if (item !== draggedItem) {
+                if (
+                    Math.abs(x - itemX) < delta &&
+                    Math.abs(y - itemY) < delta
+                ) {
+                    positions[item] = { x: itemX, y: itemY + delta };
+                }
+                if (dataFeeds[item].feeds) {
+                    if (
+                        x >= itemX &&
+                        x <= itemX + delta &&
+                        y >= itemY &&
+                        y <= itemY + delta
+                    ) {
+                        console.log("Moved feed", item, "to folder", item);
+                    }
+                }
+            }
+        });
+
+        console.log("Updated positions:", positions);
+    };
 
     return (
         <View style={styles.container}>
