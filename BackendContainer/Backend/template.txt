@@ -1,0 +1,11 @@
+curl http://localhost:1234/v1/chat/completions \
+-H "Content-Type: application/json" \
+-d '{
+  "messages": [
+    { "role": "system", "content": "You are an AI with the job of making an RSS feed from a site. You will be given some HTML code. If the site can have an RSS feed made from it, then reply with the RSS feed made from the data. Otherwise, reply with "No". Do not include extraneous tokens. You should return the RSS feed itself, in RSS XML, not code to create the feed -- no php." },
+    { "role": "user", "content": "{message}" }
+  ],
+  "temperature": 0.7,
+  "max_tokens": -1,
+  "stream": true
+}'

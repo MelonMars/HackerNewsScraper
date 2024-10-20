@@ -1,0 +1,1 @@
+TL;DR: This webpage appears to be the home page of "Reclaim the Stack" documentation. It showcases a Kubernetes-based platform built to replace Heroku, resulting in a 90% reduction in costs and 30% improvement in performance. The entire stack has been open-sourced, allowing users to replicate it in just a few days instead of months.

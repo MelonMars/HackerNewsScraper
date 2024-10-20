@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>LM Studio RSS Feed</title>
+<link>https://lmstudio.ai/</link>
+<description>A feed of articles and tutorials from LM Studio.</description>
+
+<item>
+<title>Loading an LLM and Predicting with It</title>
+<link>https://lmstudio.ai/docs/lmstudio-sdk/loading-an-llm-and-predicting-with-it</link>
+<description>Learn how to load a language model (LLM) and make predictions with it in LM Studio.</description>
+</item>
+
+<item>
+<title>Loading a Model and Keeping It Loaded After Client Exit (daemon mode)</title>
+<link>https://lmstudio.ai/docs/lmstudio-sdk/loading-a-model-and-keeping-it-loaded-after-client-exit-daemon-mode</link>
+<description>Discover how to load a model in daemon mode and keep it loaded after the client exits.</description>
+</item>
+
+<item>
+<title>Canceling a Load or Prediction</title>
+<link>https://lmstudio.ai/docs/lmstudio-sdk/canceling-a-load-or-prediction</link>
+<description>Learn how to cancel a load or prediction in LM Studio.</description>
+</item>
+
+</channel>
+</rss>

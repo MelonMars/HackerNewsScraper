@@ -11,14 +11,22 @@ const FeedScreen = () => {
     const feeds = feedData.response.entries;
     const navigation = useNavigation();
     return (
-        <ScrollView >
-            {feeds.map((item) => (
-                <View>
-                    <TouchableOpacity onPress={() => navigation.navigate('FeedPage', { description: item.description })}>
-                    <Text>{item.title}</Text>
-                    </TouchableOpacity>
-                </View>
-            ))}
+        <ScrollView>
+            {feeds.map((item, index) => {
+                console.log('Item params:', item);
+
+                return (
+                    <View key={index}>
+                        <TouchableOpacity onPress={() => navigation.navigate('FeedPage', {
+                            description: item.description,
+                            title: item.title,
+                            link: item.link,
+                        })}>
+                            <Text>{item.title}</Text>
+                        </TouchableOpacity>
+                    </View>
+                );
+            })}
         </ScrollView>
     );
 }

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>Hacker News</title>
+<link>https://news.ycombinator.com/</link>
+<description>Hacker News Feed</description>
+
+<item>
+  <title>Things to know about the Great Wave</title>
+  <link>https://www.artic.edu/articles/1139/10-things-to-know-about-the-great-wave</link>
+  <pubDate>2024-09-07T15:31:43.000000Z</pubDate>
+  <guid>41474449</guid>
+  <description>244 points by msephton 20 hours ago | hide | 78 comments</description>
+</item>
+
+<item>
+  <title>Gnome Files: A detailed UI examination</title>
+  <link>https://www.datagubbe.se/gnomefiles/</link>
+  <pubDate>2024-09-07T22:35:31.000000Z</pubDate>
+  <guid>41476873</guid>
+  <description>247 points by dominikh 15 hours ago | hide | 159 comments</description>
+</item>
+
+<item>
+  <title>GPT-fabricated scientific papers on Google Scholar</title>
+  <link>https://misinforeview.hks.harvard.edu/article/gpt-fabricated-scientific-papers-on-google-scholar-key-features-spread-and-implications-for-preempting-evidence-manipulation/</link>
+  <pubDate>2024-09-08T01:15:04.000000Z</pubDate>
+  <guid>41477516</guid>
+  <description>164 points by celadevra_ 12 hours ago | hide | 88 comments</description>
+</item>
+
+<item>
+  <title>Hallelujah, Leonard Cohen, and a Pulitzer Prize-winning writer's suicide</title>
+  <link>https://subtledigressions.substack.com/p/hallelujah-leonard-cohen-and-a-pulitzer</link>
+  <pubDate>2024-09-07T18:46:43.000000Z</pubDate>
+  <guid>41475618</guid>
+  <description>141 points by Curiositry 18 hours ago | hide | 80 comments</description>
+</item>
+
+<item>
+  <title>The little-known life of the scarfing tool</title>
+  <link>https://www.thefabricator.com/tubepipejournal/article/tubepipefabrication/the-little-known-life-of-the-scarfing-tool</link>
+  <pubDate>2024-09-05T18:10:32.000000Z</pubDate>
+  <guid>41459094</guid>
+  <description>9 points by 082349872349872 6 hours ago | hide | 1 comment</description>
+</item>
+
+</channel>
+</rss>

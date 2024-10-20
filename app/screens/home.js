@@ -1,20 +1,22 @@
-import React, {useEffect, useRef, useState, useCallback } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
     ActivityIndicator,
     Button,
-    FlatList,
     Modal,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     TouchableWithoutFeedback,
-    View, PanResponder, Animated
+    View
 } from 'react-native';
 import {auth, db} from '../firebase';
 import {signOut} from 'firebase/auth';
 import {doc, getDoc, updateDoc} from 'firebase/firestore';
-import { useNavigation } from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {DraxProvider, DraxView} from 'react-native-drax';
 
 export default function HomeScreen() {
     const [userId, setUserId] = useState(null);
@@ -27,9 +29,20 @@ export default function HomeScreen() {
     const addButtonRef = useRef(null);
     const [inputResolver, setInputResolver] = useState(null);
     const [feeds, setFeeds] = useState([]);
+    const [folders, setFolders] = useState([]);
     const [dataFeeds, setDataFeeds] = useState([]);
     const navigation = useNavigation();
-    const itemPositionsRef = useRef({});
+    const [draggables, setDraggables] = useState(feeds.map(feed => feed));
+    const [receptacles, setReceptacles] = useState(folders.map((folder, index) => ({ id: index + 1, items: [] })));
+    const [draggingItem, setDraggingItem] = useState(null);
+    const [expandedFolders, setExpandedFolders] = React.useState({});
+
+    const toggleFolderExpansion = (id) => {
+        setExpandedFolders((prev) => ({
+            ...prev,
+            [id]: !prev[id],
+        }));
+    };
 
     useEffect(() => {
         const user = auth.currentUser;
@@ -37,8 +50,9 @@ export default function HomeScreen() {
     }, []);
 
     useEffect(() => {
-        console.log("inputVisible updated:", inputVisible);
-    }, [inputVisible]);
+        if (userId === null) return;
+        fetchFeedsAndFolders();
+    }, [userId]);
 
     const handleLogout = async () => {
         await signOut(auth);
@@ -61,9 +75,7 @@ export default function HomeScreen() {
 
     const showInputModal = (prompt) => {
         setAddItemVisible(false);
-        console.log(prompt);
         setInputPrompt(prompt);
-        console.log(inputPrompt);
         setInputVisible(true);
 
         return new Promise((resolve) => {
@@ -79,65 +91,67 @@ export default function HomeScreen() {
         }
     };
 
-    const fetchFeeds = async () => {
-        console.log(db);
-        console.log(auth.currentUser.uid);
+    const fetchFeedsAndFolders = async () => {
+        setLoading(true);
         try {
-            const dataSnapshot = await getDoc(doc(db, 'userData', auth.currentUser.uid));
-            if (dataSnapshot.exists()) {
-                console.log("Datasnapshot: ", dataSnapshot.data());
-            } else {
-                console.log("No such document!");
-            }
-        } catch (err) {
-            console.log("Error in dataSnap: " + err);
-        }
-        try {
-            const dataSnapshot = await getDoc(doc(db, 'userData', auth.currentUser.uid));
+            console.log("Getting data snap");
+            console.log("DB:", db);
+            console.log("User ID:", userId);
+            const dataSnapshot = await getDoc(doc(db, 'userData', userId));
+            console.log("Got Data Snap!");
             const feedsData = dataSnapshot.exists() ? dataSnapshot.data().feeds : {};
             setDataFeeds(feedsData);
-            console.log(feedsData);
-            setFeeds(Object.keys(feedsData));
+
+            console.log("Feed Data", feedsData);
+            const feedItems = Object.keys(feedsData).filter(key =>
+                Array.isArray(feedsData[key]) && feedsData[key][0]?.type === 'feed'
+            );
+            const folderItems = Object.keys(feedsData).filter(key =>
+                typeof feedsData[key] === 'object' && 'feeds' in feedsData[key]
+            );
+
+            setFeeds(feedItems.sort());
+            setFolders(folderItems);
         } catch (error) {
             console.error("Error fetching feeds: ", error);
         } finally {
             setLoading(false);
+            console.log("Folders:", folders);
+            console.log("Feeds:", feeds);
         }
     };
 
-    useEffect(() => {
-        fetchFeeds();
-    }, []);
 
     const addFeed = async () => {
-        console.log("ADDFEED");
         setLoading(true);
         try {
             const feedTitle = await showInputModal("Enter feed name:");
-            console.log("Feed Title:", feedTitle);
-
             let feedUrl = await showInputModal("Enter feed url:");
-            console.log("Feed URL:", feedUrl);
             feedUrl = feedUrl.replace(" ", "");
+
             const response = await fetch("http://192.168.56.1:8000/checkFeed/?feedUrl=" + feedUrl);
             const feed = await response.json();
 
-            console.log(feed.response);
-
-
             if (feed.response === "BOZO") {
-                alert("INVALID FEED URL");
+                const response = await fetch("http://192.168.56.1:8000/makeFeed/?feedUrl=" + feedUrl);
+                const feed2 = await response.json();
+                if (feed2.response === "BOZO") {
+                    alert("INVALID FEED URL");
+                } else {
+                    const validFeedUrl = feed.response;
+                    const dataSnapshot = await getDoc(doc(db, 'userData', userId));
+                    const updates = {};
+                    updates[`feeds.${feedTitle}`] = [{ feed: validFeedUrl, type: "feed"}];
+                    await updateDoc(dataSnapshot.ref, updates);
+                    await fetchFeedsAndFolders();
+                }
             } else {
-                alert("Found feed, adding!");
                 const validFeedUrl = feed.response;
                 const dataSnapshot = await getDoc(doc(db, 'userData', userId));
                 const updates = {};
-                updates[`feeds.${feedTitle}`] = [{feed: validFeedUrl, type: "feed"}];
+                updates[`feeds.${feedTitle}`] = [{ feed: validFeedUrl, type: "feed"}];
                 await updateDoc(dataSnapshot.ref, updates);
-                const data = dataSnapshot.data();
-                const feeds = data.feeds;
-                console.log(feeds);
-                await fetchFeeds();
+                await fetchFeedsAndFolders();
             }
         } catch (e) {
             console.log(e);
@@ -146,17 +160,14 @@ export default function HomeScreen() {
     };
 
     const addFolder = async () => {
-        console.log("ADDFOLDER");
         setLoading(true);
         try {
             const folderName = await showInputModal("Enter folder name:");
-            console.log("Folder name:", folderName);
-
             const dataSnapshot = await getDoc(doc(db, 'userData', userId));
             const updates = {};
             updates[`feeds.${folderName}`] = [{ feeds: {}, type: "folder" }];
             await updateDoc(dataSnapshot.ref, updates);
-            alert("Added folder: " + folderName);
+            await fetchFeedsAndFolders();
         } catch (e) {
             console.log(e);
         }
@@ -165,162 +176,137 @@ export default function HomeScreen() {
 
     const fetchFeed = async (url) => {
         try {
-            const response = await fetch("http://192.168.56.1:8000/feed?feed="+url);
+            const response = await fetch("http://192.168.56.1:8000/feed?feed=" + url);
             console.log(url)
             const feedData = await response.json();
-            navigation.navigate('Feed', { feedData });
+            navigation.navigate('Feed', {feedData});
             console.log(feedData);
         } catch (e) {
-            alert("Unable to fetch (in createFeedDB): " + e);
+            alert("Unable to fetch (in fetchFeed): " + e);
         }
     }
 
-    const FeedItem = ({ item, onDrop }) => {
-        console.log("Instantiated");
-        const pan = useRef(new Animated.ValueXY()).current;
-        const [isDragging, setIsDragging] = useState(false);
-        const selfRef = useRef(null);
-        const [hasMeasured, setHasMeasured] = useState(false);
+    const handleDrop = async (draggedItem, folder) => {
+        console.log("Got drop!");
+        try {
+            const dataSnapshot = await getDoc(doc(db, 'userData', userId));
+            const updates = {};
 
-        const measureAndSetPosition = useCallback(() => {
-            if (selfRef.current) {
-                setTimeout(() => {
-                    selfRef.current.measure((x, y, width, height, pageX, pageY) => {
-                        console.log('Initial position for', item, ":", { x: pageX, y: pageY });
-                        itemPositionsRef.current[item] = { x: pageX, y: pageY, width, height };
-                        setHasMeasured(true);
-                    });
-                }, 0);
+            if (dataFeeds[folder][0].type === 'folder') {
+                console.log("Dragged Snap:",dataSnapshot.data().feeds[draggedItem][0]);
+                console.log("Data Snap:",dataSnapshot);
+                updates[`feeds.${folder}.feeds.${draggedItem}`] = dataSnapshot.data().feeds[draggedItem][0];
+                await updateDoc(dataSnapshot.ref, updates);
+                await fetchFeedsAndFolders();
+                alert(`Moved ${draggedItem} to ${folder}`);
+
+                setDraggables(prevDraggables => prevDraggables.filter(item => item !== draggedItem));
+
+                setReceptacles(prevReceptacles =>
+                    prevReceptacles.map(receptacle => {
+                        if (receptacle.id === folder) {
+                            return { ...receptacle, items: [...receptacle.items, draggedItem] };
+                        }
+                        return receptacle;
+                    })
+                );
             }
-        }, [item]);
-
-        useEffect(() => {
-            if (!hasMeasured) {
-                measureAndSetPosition();
-            }
-        }, [measureAndSetPosition, hasMeasured]);
-
-        useEffect(() => {
-            const position = itemPositionsRef.current[item];
-            if (position && !isDragging) {
-                pan.setValue({ x: position.x, y: position.y });
-            }
-        }, [item, isDragging]);
-
-        const panResponder = useRef(
-            PanResponder.create({
-                onStartShouldSetPanResponder: () => true,
-                onPanResponderGrant: () => {
-                    setIsDragging(true);
-                },
-                onPanResponderMove: Animated.event(
-                    [null, { dx: pan.x, dy: pan.y }],
-                    { useNativeDriver: false }
-                ),
-                onPanResponderRelease: (e, gestureState) => {
-                    setIsDragging(false);
-                    onDrop(item, gestureState.moveX, gestureState.moveY);
-                },
-            })
-        ).current;
-
-        return (
-            <Animated.View
-                style={[pan.getLayout(), isDragging && { zIndex: 1 }]}
-                {...panResponder.panHandlers}
-                ref={selfRef}
-            >
-                <View>
-                    <Text>{item}</Text>
-                </View>
-            </Animated.View>
-        );
+        } catch (error) {
+            console.error("Error moving feed to folder: ", error);
+        }
     };
 
-    /*const handleDrop = (draggedItem, x, y) => {
-        const delta = 20;
-        const positions = itemPositionsRef.current;
+    useEffect(() => {
+        const uniqueDraggables = Array.from(new Set(draggables));
 
-        console.log(positions);
-        Object.entries(positions).forEach(([item, { x: itemX, y: itemY, width, height }]) => {
-            console.log("Item", item, ": X:", itemX, "Y:", itemY);
-        });
+        if (uniqueDraggables.length !== draggables.length ||
+            !uniqueDraggables.every((item, index) => item === draggables[index])) {
+            setDraggables(uniqueDraggables);
+        }
+    }, [draggables]);
 
-        console.log(positions);
-        Object.entries(positions).forEach(([item, { x: itemX, y: itemY, width, height }]) => {
-            console.log(item, itemX, itemY);
-            if ('feeds' in dataFeeds[item][0]) {
-                console.log("Folder!");
-                if (
-                    x >= itemX &&
-                    x <= itemX + delta &&
-                    y >= itemY &&
-                    y <= itemY + delta
-                ) {
-                    console.log(`Item ${draggedItem} dropped into ${item}`);
-                }
-            }
-        });
 
-        console.log(draggedItem);
-        console.log(dataFeeds[draggedItem]);
-        console.log("Actual X:", x, "Actual Y:", y);
-
-        itemPositionsRef.current[draggedItem] = { x, y };
-
-        console.log("Item pos X:", x, "Item pos Y:", y);
-    };*/
-
-    const handleDrop = (draggedItem, x, y) => {
-        const positions = itemPositionsRef.current;
-        const delta = 20; // Adjust as necessary
-
-        itemPositionsRef.current[draggedItem] = { x, y };
-
-        Object.entries(positions).forEach(([item, { x: itemX, y: itemY }]) => {
-            if (item !== draggedItem) {
-                if (
-                    Math.abs(x - itemX) < delta &&
-                    Math.abs(y - itemY) < delta
-                ) {
-                    positions[item] = { x: itemX, y: itemY + delta };
-                }
-                if (dataFeeds[item].feeds) {
-                    if (
-                        x >= itemX &&
-                        x <= itemX + delta &&
-                        y >= itemY &&
-                        y <= itemY + delta
-                    ) {
-                        console.log("Moved feed", item, "to folder", item);
-                    }
-                }
-            }
-        });
-
-        console.log("Updated positions:", positions);
+    const handleDragEnd = (payload) => {
+        if (!receptacles.some(receptacle => receptacle.items.includes(payload))) {
+            setDraggables((prevDraggables) => [...prevDraggables, payload]);
+        }
     };
+
+    const renderFeedItem = ({ item, index }) => (
+        <DraxView
+            longPressDelay={250}
+            key={item}
+            style={styles.draggable}
+            onDragEnd={() => {
+                console.log("Item dragged:", item.dragged);
+
+                handleDragEnd(item);
+                console.log("Draggables:", draggables);
+            }}
+            payload={item}
+            onDragStart={() => item.dragged = false}
+            onDragOver={event => {
+                console.log('start drag');
+                if (event.dragTranslation.x || event.dragTranslation.y) {
+                    item.dragged = true;
+                }
+            }}>
+            <TouchableOpacity
+            onPress={async () => {
+                console.log("Pressed:", dataFeeds[item][0].feed);
+                await fetchFeed(dataFeeds[item][0].feed);
+            }}>
+                <Text style={styles.text}>{item}</Text>
+            </TouchableOpacity>
+        </DraxView>
+    );
+
+    useEffect(() => {
+        setDraggables(feeds.map(feed => feed));
+        setReceptacles(folders.map((folder, index) => ({ id: folder, items: [] })));
+    }, [feeds, folders]);
 
     return (
-        <View style={styles.container}>
-            <Text>Welcome to Home Screen!</Text>
-            <TouchableOpacity onPress={handleLogout}>
-                <Text>Logout</Text>
-            </TouchableOpacity>
-            <Text>Your user id is {userId}</Text>
-            <TouchableOpacity ref={addButtonRef} onPress={handleAddItem}>
-                <Text>+</Text>
-            </TouchableOpacity>
-            <FlatList
-                data={feeds}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={({ item }) => (
-                    <FeedItem
-                        item={item}
-                        onDrop={handleDrop}
-                    />
-                )}
-            />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <DraxProvider>
+                <ScrollView contentContainerStyle={styles.container}>
+                    <Text>Welcome to Home Screen!</Text>
+                    <TouchableOpacity onPress={handleLogout}>
+                        <Text>Logout</Text>
+                    </TouchableOpacity>
+                    <Text>Your user id is {userId}</Text>
+                    <TouchableOpacity onPress={handleAddItem} ref={addButtonRef}>
+                        <Text>+</Text>
+                    </TouchableOpacity>
+
+                    <View style={styles.draggablesContainer}>
+                        {draggables.map((item, index) => (
+                            renderFeedItem({ item, index })
+                        ))}
+                    </View>
+
+                    <View style={styles.receptaclesContainer}>
+                        {receptacles.map((receptacle) => (
+                            <DraxView
+                                key={receptacle.id}
+                                style={styles.receptacle}
+                                onReceiveDragDrop={({ dragged: { payload } }) => {
+                                    console.log(`Item "${payload}" dropped into Receptacle ${receptacle.id}`);
+                                    handleDrop(payload, receptacle.id);
+                                }}
+                            >
+                                <Text style={styles.text}>Receptacle {receptacle.id}</Text>
+                                {receptacle.items.map((item, index) => (
+                                    <Text key={index} style={styles.receptacleItem}>
+                                        {item}
+                                    </Text>
+                                ))}
+                            </DraxView>
+                        ))}
+                    </View>
+                </ScrollView>
+            </DraxProvider>
+
             <Modal
                 visible={addItemVisible}
                 transparent={true}
@@ -366,16 +352,18 @@ export default function HomeScreen() {
                     </View>
                 </View>
             </Modal>
+
             {loading && <ActivityIndicator size="large" color="#0000ff" />}
-        </View>
+        </GestureHandlerRootView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+    folderItem: {
+        padding: 10,
+        backgroundColor: 'lightgray',
+        marginVertical: 5,
+        borderRadius: 5,
     },
     modalBackdrop: {
         flex: 1,
@@ -416,7 +404,72 @@ const styles = StyleSheet.create({
         width: 300,
         padding: 20,
         backgroundColor: 'white',
-        borderRadius: 10,
+        borderRadius: 5,
+    },
+    folder: {
+        padding: 10,
+        backgroundColor: '#e0e0e0',
+        borderRadius: 5,
+        marginVertical: 5,
+    },
+    container: {
+        flexGrow: 1,
+        justifyContent: 'center',
         alignItems: 'center',
+        paddingVertical: 20,
+    },
+    hidden: {
+        opacity: 0,
+    },
+    text: {
+        color: 'white',
+        fontSize: 16,},
+    folderContainer: {
+        width: '100%',
+        marginVertical: 5,
+    },
+    folderHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#e0e0e0',
+        padding: 10,
+        borderRadius: 5,
+    },
+    draggablesContainer: {
+        flexDirection: 'column',  // Arrange items in a column
+        justifyContent: 'flex-start',
+        marginBottom: 20,
+        width: '100%',
+    },
+    draggable: {
+        width: '100%',  // Full width for row-like appearance
+        height: 50,  // Adjust height for a row-like appearance
+        backgroundColor: 'blue',
+        justifyContent: 'center',
+        alignItems: 'flex-start',  // Align text to the start (left)
+        marginVertical: 5,  // Adjust margin for better spacing
+        paddingHorizontal: 10,  // Add padding for text
+    },
+    receptaclesContainer: {
+        flexDirection: 'column',  // Arrange items in a column
+        justifyContent: 'flex-start',
+        marginTop: 20,
+        width: '100%',
+    },
+    receptacle: {
+        width: '100%',  // Full width for row-like appearance
+        height: 'auto',  // Auto height to fit content
+        backgroundColor: 'green',
+        justifyContent: 'center',
+        alignItems: 'flex-start',  // Align text to the start (left)
+        marginVertical: 5,  // Adjust margin for better spacing
+        padding: 10,  // Add padding for text
+    },
+    receptacleItem: {
+        color: 'yellow',
+        fontSize: 14,  // Slightly larger font for readability
+        marginVertical: 2,  // Spacing between items within a folder
     },
 });
+
